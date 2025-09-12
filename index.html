@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.3 (long)</title>
+<title>Training QUINTA — v1.4</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -32,8 +32,10 @@
   .seg input{display:none}
   .seg label{padding:9px 12px;cursor:pointer}
   .seg input:checked + label{background:#2a3347}
-  .modal{position:fixed;inset:0;display:none;place-items:center;background:#0008;padding:20px}
-  .modal .inner{max-width:900px;width:100%;background:#0f121d;border:1px solid #2a3242;border-radius:12px;padding:18px}
+  /* ==== Modals (scroll apenas dentro) ==== */
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:#0008;padding:20px;z-index:999}
+  .modal .inner{max-width:900px;width:100%;background:#0f121d;border:1px solid #2a3242;border-radius:12px;padding:18px;
+                max-height:85vh;overflow:auto} /* <- rola só o conteúdo do modal */
   .modal h2{margin:0 0 8px;font-size:18px}
   .legend{font-size:14px;color:var(--muted)}
   .legend b{color:#cfd8ea}
@@ -42,6 +44,7 @@
   .manualResult{font-size:14px;margin-left:4px}
   .hide{display:none!important}
   footer{margin-top:12px;text-align:center;font-size:12px;color:var(--muted)}
+  select, input[type="number"]{background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px}
 </style>
 </head>
 <body>
@@ -55,7 +58,7 @@
       <button id="helpBtn" title="Shortcut: H">Help <span class="kbd">H</span></button>
       <button id="qsBtn" title="Shortcut: Q">Quick Start Guide <span class="kbd">Q</span></button>
 
-      <span class="pill">Range: 
+      <span class="pill">Range:
         <select id="range">
           <option value="1-40" selected>1–40 (default)</option>
           <option value="1-15">1–15</option>
@@ -69,33 +72,37 @@
         </select>
       </span>
       <span id="customWrap" class="pill" style="display:none">
-        <input id="minN" type="number" value="1" style="width:80px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px"> –
-        <input id="maxN" type="number" value="15" style="width:80px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px">
+        <input id="minN" type="number" value="1" style="width:80px"> –
+        <input id="maxN" type="number" value="15" style="width:80px">
       </span>
 
+      <span class="pill"><label><input id="adaptiveCB" type="checkbox" checked> Adaptive</label></span>
+
+      <span class="pill"><label><input id="fastCB" type="checkbox" checked> Fast Tap Mode</label></span>
+
       <span class="pill">
-        <label><input id="adaptiveCB" type="checkbox" checked style="vertical-align:middle"> Adaptive</label>
+        <label style="margin-right:6px"><input id="ttsCB" type="checkbox"> Speak number</label>
+        <select id="voiceSel" title="Select voice" style="max-width:260px">
+          <option value="">Auto (by language)</option>
+        </select>
       </span>
-      <span class="pill">
-        <label><input id="fastCB" type="checkbox" checked style="vertical-align:middle"> Fast Tap Mode</label>
-      </span>
-      <span class="pill">
-        <label><input id="ttsCB" type="checkbox" style="vertical-align:middle"> Speak number</label>
-      </span>
+
       <button id="resetBtn" title="Reset learning">Reset training</button>
     </div>
 
     <div class="row" style="margin:0 0 8px">
       <span class="pill">
         Enter N:
-        <input id="manualN" type="number" inputmode="numeric" placeholder="e.g. 33" style="width:90px;margin-left:6px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px">
+        <input id="manualN" type="number" inputmode="numeric" placeholder="e.g. 33" style="width:90px;margin-left:6px">
       </span>
       <button id="analyzeBtn" title="Shortcut: Ctrl+Enter">Find side & type</button>
       <span id="manualOut" class="manualResult muted">—</span>
     </div>
 
     <div class="big" id="number">—</div>
-    <div class="legend" id="hint">Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)</div>
+    <div class="legend" id="hint">
+      Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)
+    </div>
 
     <div class="board" aria-label="row of 5 items" id="board">
       <div class="item btn" data-idx="0">1st</div>
@@ -123,7 +130,7 @@
       <div class="stat">Correct: <b id="ok">0</b></div>
       <div class="stat">Wrong: <b id="err">0</b></div>
       <div class="stat">Time: <b id="timer">0.0s</b></div>
-      <!-- Avg(20) removido a pedido -->
+      <!-- Avg(20) removido -->
     </div>
   </div>
 
@@ -152,18 +159,21 @@
           • “Basic” counts <i>points</i> 1,2,3,4,5,4,3,2,1…; “Bounce” counts <i>moves</i>.
         </div>
         <div class="hr"></div>
-        <h3 style="margin:0 0 6px">Tips</h3>
+        <h3 style="margin:0 0 6px">New features in v1.4</h3>
         <div class="legend">
-          • Shortcuts: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start.<br>
-          • New: <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> → Basic/Bounce • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> → Left/Right • <span class="kbd">Space</span> toggles type.<br>
-          • <b>Auto-advance:</b> when correct, the next number is generated automatically; when wrong, nothing changes until you decide.<br>
-          • <b>Fast Tap Mode:</b> tap the square where you’d say “1”. No need to set type/side or press Check.
+          • <b>Fast Tap Mode</b>: toque direto no quadrado onde você diria “1” — sem precisar definir tipo/side nem apertar Check.<br>
+          • <b>Speak number</b> (TTS) com <b>auto-idioma</b> e <b>seletor de voz</b> manual.<br>
+          • <b>Adaptive</b>: reforça os casos que estão mais lentos/difíceis.<br>
+          • <b>Modals roláveis</b> no celular (Help e Quick Start).<br>
+          • “Avg(20)” removido da UI, mantendo estatísticas simples (Time por rodada).
         </div>
         <div class="hr"></div>
-        <h3 style="margin:0 0 6px">Mental example</h3>
+        <h3 style="margin:0 0 6px">Tips</h3>
         <div class="legend">
-          N=22 → Basic; 22 ≡ 6 (mod 8) ⇒ start on the <b>Right</b>.<br>
-          N=33 → Bounce; use 34 ⇒ 34 ≡ 2 (mod 8) ⇒ start on the <b>Left</b>.
+          • Atalhos: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N.<br>
+          • Direções: <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Basic/Bounce • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Left/Right • <span class="kbd">Space</span> alterna tipo.<br>
+          • <b>Auto-advance</b>: ao acertar, o próximo número é gerado automaticamente.<br>
+          • Em iOS, as vozes aparecem após a primeira interação (limitação do Safari).
         </div>
       </div>
 
@@ -171,20 +181,16 @@
         <h3 style="margin:0 0 6px">Cheat-sheet</h3>
         <div class="legend">
           <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
-          <b>Side (Basic):</b> start <b>Left</b> if N ≡ 0 or 2 (mod 8); otherwise <b>Right</b>. <br/>
-          <b>Side (Bounce):</b> use <b>N+1</b> with the same rule. <br/>
-          <b>Shortcuts:</b> <span class="kbd">N</span> • <span class="kbd">Enter</span> • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> • <span class="kbd">Q</span> •
-          <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Type • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b> • <b>Fast Tap Mode</b> • <b>Speak number</b>.
+          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); else Right. <br/>
+          <b>Side (Bounce):</b> apply rule to N+1. <br/>
+          <b>Fast Tap:</b> toque onde você diria “1”. <br/>
+          <b>TTS:</b> marque “Speak number” e, se quiser, escolha a voz no seletor ao lado.
         </div>
-
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">About the book</h3>
         <div class="legend">
-          If you want to really understand how QUINTA works in depth, get the book 
-          <i>Quinta: A Miracle in Five Parts</i> here: 
-          <a href="https://phillsmithcreative.com/collections/books/products/quinta-book" target="_blank">
-            official link
-          </a>.
+          To go deeper into QUINTA, check <i>Quinta: A Miracle in Five Parts</i>:
+          <a href="https://phillsmithcreative.com/collections/books/products/quinta-book" target="_blank">official link</a>.
         </div>
       </div>
     </div>
@@ -204,39 +210,34 @@
       <div>
         <h3 style="margin:0 0 6px">What this trainer is</h3>
         <div class="legend">
-          This tool helps you master <b>QUINTA</b> mechanics: forcing the <b>2nd from the left</b> among 5 items by deciding the correct
-          <b>Counting Type</b> and <b>Starting Side</b> for any number <i>N</i>.
+          Practice the mechanics to force the <b>2nd from the left</b> among five by choosing the correct
+          <b>Counting Type</b> and <b>Starting Side</b> for any <i>N</i>.
         </div>
 
         <div class="hr"></div>
-        <h3 style="margin:0 0 6px">How to use (2-minute flow)</h3>
+        <h3 style="margin:0 0 6px">2-minute flow</h3>
         <ol class="legend" style="padding-left:18px">
-          <li>Pick a <b>Range</b> (or set a <b>Custom</b> min/max). Leave <b>Adaptive</b> on.</li>
-          <li>Press <b>Generate number</b> (<span class="kbd">N</span>) or type in <b>Enter N</b> and click <b>Find side &amp; type</b>.</li>
-          <li>Choose <b>Type</b>: even → <b>Basic</b>, odd → <b>Bounce</b>.</li>
-          <li>Choose <b>Side</b> via the mod-8 rule.</li>
-          <li>(Optional) Toggle <b>Step-by-step</b> to visualize.</li>
-          <li>Hit <b>Check</b> (<span class="kbd">Enter</span>). If correct, a new number appears automatically; if wrong, revise and try again.</li>
-          <li>Or enable <b>Fast Tap Mode</b> and just tap where you’d say “1”.</li>
-          <li>(Optional) Enable <b>Speak number</b> to hear the number via TTS.</li>
-          <li>Use <b>Reset training</b> to clear stats and weights.</li>
+          <li>Choose a <b>Range</b> (or set <b>Custom</b>). Keep <b>Adaptive</b> on.</li>
+          <li>Press <b>Generate number</b> (<span class="kbd">N</span>).</li>
+          <li><b>Fast Tap Mode</b>: toque onde diria “1”. (Ou desligue para usar Type/Side + Check.)</li>
+          <li>(Optional) Enable <b>Speak number</b> e selecione uma voz no dropdown.</li>
+          <li>Ao acertar, um novo número é gerado automaticamente.</li>
         </ol>
 
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Manual mode</h3>
         <div class="legend">
-          Type any <b>N</b> and click <b>Find side &amp; type</b> (or <span class="kbd">Ctrl+Enter</span>).
+          Digite um <b>N</b> e clique <b>Find side &amp; type</b> (ou <span class="kbd">Ctrl+Enter</span>) para ver a resposta ideal.
         </div>
       </div>
 
       <div>
-        <h3 style="margin:0 0 6px">Cheat-sheet</h3>
+        <h3 style="margin:0 0 6px">Shortcuts & tips</h3>
         <div class="legend">
-          <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
-          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); else Right. <br/>
-          <b>Side (Bounce):</b> use N+1. <br/>
-          <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start •
-          <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> Type • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b> • <b>Fast Tap Mode</b> • <b>Speak number</b>.
+          <b>Shortcuts:</b> <span class="kbd">N</span>, <span class="kbd">Enter</span>, <span class="kbd">Ctrl+Enter</span>, <span class="kbd">H</span>, <span class="kbd">Q</span>.<br/>
+          <b>Arrows/WASD:</b> tipo e lado (quando não estiver em Fast Tap).<br/>
+          <b>TTS:</b> auto-idioma (navegador/HTML) + seletor manual; Safari iOS pode atrasar o carregamento das vozes até a 1ª interação.<br/>
+          <b>Reset:</b> limpa estatísticas e pesos adaptativos.
         </div>
       </div>
     </div>
@@ -246,152 +247,143 @@
 <script>
 (()=>{
 
-  // ===== utils =====
-  const $ = sel => document.querySelector(sel);
-  const numberEl = $('#number'), feedback = $('#feedback');
-  const okEl=$('#ok'), errEl=$('#err'), timerEl=$('#timer');
-  const nextBtn=$('#nextBtn'), checkBtn=$('#checkBtn'), resetBtn=$('#resetBtn');
-  const helpBtn=$('#helpBtn'), modal=$('#modal'), closeHelp=$('#closeHelp');
-  const tBasic=$('#tBasic'), tBounce=$('#tBounce');
-  const sLeft=$('#sLeft'), sRight=$('#sRight');
+  // ====== QS helpers ======
+  const $ = s => document.querySelector(s);
+  const numberEl=$('#number'),feedback=$('#feedback');
+  const okEl=$('#ok'),errEl=$('#err'),timerEl=$('#timer');
+  const nextBtn=$('#nextBtn'),checkBtn=$('#checkBtn'),resetBtn=$('#resetBtn');
+  const helpBtn=$('#helpBtn'),modal=$('#modal'),closeHelp=$('#closeHelp');
+  const qsBtn=$('#qsBtn'),qsModal=$('#qsModal'),closeQS=$('#closeQS');
+  const tBasic=$('#tBasic'),tBounce=$('#tBounce'),sLeft=$('#sLeft'),sRight=$('#sRight');
   const stepCB=$('#step');
-  const rangeSel=$('#range'), customWrap=$('#customWrap'), minN=$('#minN'), maxN=$('#maxN');
-  const adaptiveCB=$('#adaptiveCB');
-  const fastCB=$('#fastCB');
-  const ttsCB=$('#ttsCB');
-  const manualN = $('#manualN');
-  const analyzeBtn = $('#analyzeBtn');
-  const manualOut = $('#manualOut');
-  const qsBtn = $('#qsBtn');
-  const qsModal = $('#qsModal');
-  const closeQS = $('#closeQS');
-  const board = $('#board');
-  const advancedControls = $('#advancedControls');
-  const hintEl = $('#hint');
+  const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN');
+  const adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB');
+  const voiceSel=$('#voiceSel');
+  const manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
+  const board=$('#board'),advancedControls=$('#advancedControls'),hintEl=$('#hint');
 
-  let N=null, lastN=null, startTime=0, ok=0, err=0, locked=false;
-  let times=[]; // rolling times (UI da média foi removida)
-  let weights = [1,1,1,1]; // BL, BR, bL, bR
+  let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
+  let weights=[1,1,1,1]; // BL, BR, bL, bR
 
-  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  // ====== timer ======
   function now(){return performance.now()}
-  function updateTimer(){
-    if(startTime){ timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s'; }
-    requestAnimationFrame(updateTimer)
-  }
+  function updateTimer(){ if(startTime){timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s';} requestAnimationFrame(updateTimer) }
   requestAnimationFrame(updateTimer);
 
+  // ====== range ======
   function currentRange(){
     if(rangeSel.value==='custom'){
       let a=parseInt(minN.value||'1',10), b=parseInt(maxN.value||'15',10);
-      if(a>b) [a,b]=[b,a];
-      return [Math.max(1,a), Math.min(9999,b)];
+      if(a>b)[a,b]=[b,a]; return [Math.max(1,a), Math.min(9999,b)];
     }
-    const [a,b]=rangeSel.value.split('-').map(x=>parseInt(x,10)); return [a,b];
+    return rangeSel.value.split('-').map(x=>parseInt(x,10));
   }
 
-  // ===== THURSDAY rules =====
+  // ====== rules ======
   function correctRule(n){
-    const tipo = (n%2===0)? 'basic':'bounce';
-    const m = (tipo==='bounce')? n+1 : n;
-    const r = ((m%8)+8)%8;
-    const lado = (r===0 || r===2)? 'left':'right';
-    return {tipo,lado, r, m};
+    const tipo=(n%2===0)?'basic':'bounce';
+    const m=(tipo==='bounce')?n+1:n;
+    const r=((m%8)+8)%8;
+    const lado=(r===0||r===2)?'left':'right';
+    return {tipo,lado,r,m};
   }
   function bucketFromRule(rule){
-    if(rule.tipo==='basic' && rule.lado==='left') return 0;
-    if(rule.tipo==='basic' && rule.lado==='right') return 1;
-    if(rule.tipo==='bounce' && rule.lado==='left') return 2;
-    return 3; // bounce+right
+    if(rule.tipo==='basic'&&rule.lado==='left') return 0;
+    if(rule.tipo==='basic'&&rule.lado==='right') return 1;
+    if(rule.tipo==='bounce'&&rule.lado==='left') return 2;
+    return 3;
   }
 
-  // ===== Number generation: no immediate repeat + adaptive bias =====
-  function sampleBucketAvailable(a, b){
-    const seen = new Set();
-    for(let i=0;i<400 && seen.size<4;i++){
-      seen.add(bucketFromRule(correctRule(randInt(a,b))));
-    }
+  // ====== adaptive generator ======
+  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function sampleBucketAvailable(a,b){
+    const seen=new Set();
+    for(let i=0;i<400 && seen.size<4;i++){ seen.add(bucketFromRule(correctRule(randInt(a,b)))); }
     return seen;
   }
-
-  function pickBucket(a, b){
-    const avail = sampleBucketAvailable(a, b);
-    const effective = [0,0,0,0];
-    let sum=0;
+  function pickBucket(a,b){
+    const avail=sampleBucketAvailable(a,b);
+    const eff=[0,0,0,0]; let sum=0;
     for(let i=0;i<4;i++){
-      if(avail.has(i)){
-        effective[i] = adaptiveCB.checked ? Math.max(0.05, weights[i]) : 1;
-        sum += effective[i];
-      }
+      if(avail.has(i)){ eff[i]=adaptiveCB.checked?Math.max(0.05,weights[i]):1; sum+=eff[i]; }
     }
-    let r = Math.random()*sum;
-    for(let i=0;i<4;i++){
-      if(!avail.has(i)) continue;
-      if(r < effective[i]) return i;
-      r -= effective[i];
-    }
+    let r=Math.random()*sum;
+    for(let i=0;i<4;i++){ if(!avail.has(i)) continue; if(r<eff[i]) return i; r-=eff[i]; }
     for(let i=0;i<4;i++) if(avail.has(i)) return i;
     return 0;
   }
 
-  // ===== TTS: auto-idioma (navigator.lang → html lang) =====
-  let _voices=[], _voicesReady=false;
+  // ====== TTS voices (auto + manual) ======
+  let _voices=[];
   function loadVoices(){
     _voices = window.speechSynthesis.getVoices() || [];
-    _voicesReady = _voices.length>0;
+    populateVoiceSelect();
   }
-  loadVoices();
-  if ('onvoiceschanged' in speechSynthesis) {
-    speechSynthesis.onvoiceschanged = () => { loadVoices(); };
+  function populateVoiceSelect(){
+    const prev=voiceSel.value;
+    voiceSel.innerHTML='<option value="">Auto (by language)</option>';
+    const preferred = ['pt-','en-','es-','fr-','de-','it-','ja-','zh-','ko-'];
+    const sorted=[..._voices].sort((a,b)=>{
+      const ap = preferred.findIndex(p=>a.lang && a.lang.toLowerCase().startsWith(p));
+      const bp = preferred.findIndex(p=>b.lang && b.lang.toLowerCase().startsWith(p));
+      return (ap===-1)-(bp===-1) || (a.lang||'').localeCompare(b.lang||'') || a.name.localeCompare(b.name);
+    });
+    sorted.forEach(v=>{
+      const opt=document.createElement('option');
+      opt.value=v.name;
+      opt.textContent=`${v.lang} — ${v.name}`;
+      voiceSel.appendChild(opt);
+    });
+    // restaura seleção anterior se existir
+    if([...voiceSel.options].some(o=>o.value===prev)) voiceSel.value=prev;
   }
   function getTargetLang(){
-    // Prioriza idioma do navegador (viajando/OS), depois <html lang>, depois pt-BR
-    return (navigator.language || document.documentElement.lang || 'pt-BR');
+    return document.documentElement.lang || navigator.language || 'pt-BR';
   }
   function pickBestVoice(target){
-    if(!_voicesReady) loadVoices();
-    const t = (target||'').toLowerCase();
-    const base = t.split('-')[0];
-    return (
-      _voices.find(v=>v.lang && v.lang.toLowerCase()===t) ||
-      _voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(base)) ||
-      _voices[0] || null
-    );
+    const t=target.toLowerCase(), base=t.split('-')[0];
+    return _voices.find(v=>v.lang&&v.lang.toLowerCase()===t)
+        || _voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(base))
+        || null;
   }
   function speakNumber(n){
     if(!ttsCB.checked) return;
     try{
-      const lang = getTargetLang();
-      const u = new SpeechSynthesisUtterance(String(n));
-      const v = pickBestVoice(lang);
-      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang; }
+      const u=new SpeechSynthesisUtterance(String(n));
+      const selName = voiceSel.value;
+      if(selName){
+        const v=_voices.find(v=>v.name===selName);
+        if(v){ u.voice=v; u.lang=v.lang||u.lang; }
+      }else{
+        const lang=getTargetLang();
+        const v=pickBestVoice(lang);
+        if(v){ u.voice=v; u.lang=v.lang; } else { u.lang=lang; }
+      }
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
+  // iOS/Safari só libera vozes após interação; ainda assim tentamos carregar:
+  loadVoices();
+  if('onvoiceschanged' in speechSynthesis){
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
 
+  // ====== core flow ======
   function newNumber(){
-    const [a,b]=currentRange();
-    const targetBucket = pickBucket(a,b);
-
-    let candidate = null, tries = 0;
-    const MAX_TRIES = 400;
-    while(tries++ < MAX_TRIES){
-      const x = randInt(a,b);
-      if(x === lastN && b>a) continue;
-      if(bucketFromRule(correctRule(x)) === targetBucket){ candidate = x; break; }
+    const[a,b]=currentRange();
+    const targetBucket=pickBucket(a,b);
+    let candidate=null, tries=0;
+    while(tries++<400){
+      const x=randInt(a,b);
+      if(x===lastN && b>a) continue;
+      if(bucketFromRule(correctRule(x))===targetBucket){ candidate=x; break; }
     }
-    if(candidate===null){
-      do { candidate = (a===b? a : randInt(a,b)); } while(candidate===lastN && b>a);
-    }
+    if(candidate===null){ do{ candidate=(a===b? a : randInt(a,b)); } while(candidate===lastN && b>a); }
 
-    N = candidate;
-    lastN = N;
-
-    numberEl.textContent = String(N);
-    startTime = now();
-    feedback.textContent='';
-    locked=false;
+    N=candidate; lastN=N;
+    numberEl.textContent=String(N);
+    startTime=now(); feedback.textContent=''; locked=false;
 
     hintEl.innerHTML = fastCB.checked
       ? `Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)`
@@ -400,219 +392,149 @@
     speakNumber(N);
   }
 
-  // ===== Simulation / verification =====
-  function simulate(n, tipo, lado, step=false){
-    const target=1;
-    let pos = (lado==='left')? 0: 4;
-    let dir = (lado==='left')? +1 : -1;
-    let log=[];
+  function simulate(n,tipo,lado,step=false){
+    const target=1; let pos=(lado==='left')?0:4; let dir=(lado==='left')?+1:-1; const log=[];
     if(tipo==='basic'){
-      let count=0;
-      while(count<n){
-        count++;
-        if(step) log.push({count,pos});
-        if(count===n) break;
-        pos += dir;
-        if(pos===4 || pos===0) dir*=-1;
-      }
+      let count=0; while(count<n){ count++; if(step) log.push({count,pos}); if(count===n) break; pos+=dir; if(pos===4||pos===0) dir*=-1; }
     }else{
-      let moves=0;
-      while(moves<n){
-        pos += dir; moves++;
-        if(step) log.push({count:moves,pos});
-        if(pos===4 || pos===0) dir*=-1;
-      }
+      let moves=0; while(moves<n){ pos+=dir; moves++; if(step) log.push({count:moves,pos}); if(pos===4||pos===0) dir*=-1; }
     }
-    return {hit:(pos===target), pos, log};
+    return {hit:(pos===target),pos,log};
   }
+  function userSelection(){ return {tipo: (tBasic.checked?'basic':'bounce'), lado: (sLeft.checked?'left':'right')} }
 
-  function userSelection(){
-    const tipo = tBasic.checked? 'basic':'bounce';
-    const lado = sLeft.checked? 'left':'right';
-    return {tipo,lado};
-  }
-
-  // ===== learning / averages (UI da média removida) =====
-  function resetLearning(){ weights = [1,1,1,1]; }
-  function updateAdaptiveWeights(bucket, elapsedSec){
+  function updateAdaptiveWeights(bucket, elapsed){
     if(!adaptiveCB.checked) return;
-    const SLOW = 5.0, FAST = 3.0;
-    const UP = 0.3, DOWN = 0.2;
-    const MIN_W = 0.2, MAX_W = 3.0;
-    if(elapsedSec >= SLOW){
-      weights[bucket] = Math.min(MAX_W, weights[bucket] + UP);
-    }else if(elapsedSec <= FAST){
-      weights[bucket] = Math.max(MIN_W, weights[bucket] - DOWN);
-    }else{
-      const toward1 = 0.05;
-      weights[bucket] += (1 - weights[bucket]) * toward1;
-    }
-  }
-  function pushTimeAndUpdateAvg(elapsed){
-    // Mantemos a lista de tempos para futuro, mas não exibimos Avg(20)
-    times.push(elapsed);
-    if(times.length>20) times.shift();
+    const SLOW=5.0, FAST=3.0, UP=0.3, DOWN=0.2, MIN=0.2, MAX=3.0;
+    if(elapsed>=SLOW) weights[bucket]=Math.min(MAX,weights[bucket]+UP);
+    else if(elapsed<=FAST) weights[bucket]=Math.max(MIN,weights[bucket]-DOWN);
+    else weights[bucket]+= (1-weights[bucket])*0.05;
   }
 
   function verify(){
-    if(locked || N==null) return;
-    locked=true;
-
-    const elapsed = (now()-startTime)/1000;
-    const ideal = correctRule(N);
-    const sel = userSelection();
-    const sim  = simulate(N, sel.tipo, sel.lado, stepCB.checked);
-
-    const idealTxt = `${ideal.tipo==='basic'?'Basic':'Bounce'} + ${ideal.lado==='left'?'Left':'Right'}`;
-    const userTxt  = `${sel.tipo==='basic'?'Basic':'Bounce'} + ${sel.lado==='left'?'Left':'Right'}`;
-
-    const isRight = sim.hit;
-
-    if(isRight){
-      ok++;
-      feedback.innerHTML = `<span class="ok">Correct!</span> <span class="muted">(${userTxt}) — ${elapsed.toFixed(1)}s</span>`;
-      setTimeout(()=>{ newNumber(); }, 500);
+    if(locked||N==null) return; locked=true;
+    const elapsed=(now()-startTime)/1000;
+    const ideal=correctRule(N);
+    const sel=userSelection();
+    const sim=simulate(N, sel.tipo, sel.lado, stepCB.checked);
+    const idealTxt=`${ideal.tipo==='basic'?'Basic':'Bounce'} + ${ideal.lado==='left'?'Left':'Right'}`;
+    const userTxt =`${sel.tipo==='basic'?'Basic':'Bounce'} + ${sel.lado==='left'?'Left':'Right'}`;
+    if(sim.hit){
+      ok++; feedback.innerHTML=`<span class="ok">Correct!</span> <span class="muted">(${userTxt}) — ${elapsed.toFixed(1)}s</span>`;
+      setTimeout(newNumber,500);
     }else{
-      err++;
-      feedback.innerHTML = `<span class="err">Wrong.</span> <span class="muted">You chose ${userTxt}. Ideal: <b>${idealTxt}</b>. — ${elapsed.toFixed(1)}s</span>`;
+      err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You chose ${userTxt}. Ideal: <b>${idealTxt}</b>. — ${elapsed.toFixed(1)}s</span>`;
+      if(stepCB.checked && sim.log.length){
+        const path=sim.log.map(s=>s.pos+1).join(' → ');
+        feedback.innerHTML+=`<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
+      }
     }
-
-    if(stepCB.checked && sim.log.length){
-      const path = sim.log.map(s=>s.pos+1).join(' → ');
-      feedback.innerHTML += `<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
-    }
-
     okEl.textContent=ok; errEl.textContent=err;
-
-    const bucket = bucketFromRule(ideal);
-    updateAdaptiveWeights(bucket, elapsed);
-    pushTimeAndUpdateAvg(elapsed);
+    updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
   }
 
-  // ===== fast tap mode =====
   function fastTap(idx){
-    if(locked || N==null) return;
-    locked=true;
-
-    const elapsed = (now()-startTime)/1000;
-    const ideal = correctRule(N);
-    const startIdx = (ideal.lado==='left') ? 0 : 4; // onde você diria "1"
-    const isRight = (idx === startIdx);
-
+    if(locked||N==null) return; locked=true;
+    const elapsed=(now()-startTime)/1000;
+    const ideal=correctRule(N);
+    const startIdx=(ideal.lado==='left')?0:4;
+    const isRight=(idx===startIdx);
     if(isRight){
-      ok++;
-      feedback.innerHTML = `<span class="ok">Correct!</span> <span class="muted">(Start: <b>${ideal.lado==='left'?'Left':'Right'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>) — ${elapsed.toFixed(1)}s</span>`;
-      setTimeout(()=>{ newNumber(); }, 350);
+      ok++; feedback.innerHTML=`<span class="ok">Correct!</span> <span class="muted">(Start: <b>${ideal.lado==='left'?'Left':'Right'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>) — ${elapsed.toFixed(1)}s</span>`;
+      setTimeout(newNumber,350);
     }else{
-      err++;
-      feedback.innerHTML = `<span class="err">Wrong.</span> <span class="muted">You tapped ${idx+1}º. Ideal start is <b>${ideal.lado==='left'?'Left (1º)':'Right (5º)'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>. — ${elapsed.toFixed(1)}s</span>`;
+      err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You tapped ${idx+1}º. Ideal start is <b>${ideal.lado==='left'?'Left (1º)':'Right (5º)'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>. — ${elapsed.toFixed(1)}s</span>`;
     }
-
     okEl.textContent=ok; errEl.textContent=err;
-    const bucket = bucketFromRule(ideal);
-    updateAdaptiveWeights(bucket, elapsed);
-    pushTimeAndUpdateAvg(elapsed);
+    updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
   }
+  window.fastTap=fastTap; // fallback inline
 
-  // Exponho para fallback/onclick direto
-  window.fastTap = fastTap;
-
-  // ===== events =====
+  // ====== events ======
   nextBtn.addEventListener('click', newNumber);
-  checkBtn.addEventListener('click', ()=> fastCB.checked ? null : verify());
+  checkBtn.addEventListener('click', ()=>{ if(!fastCB.checked) verify(); });
   helpBtn.addEventListener('click', ()=> modal.style.display='grid');
-  closeHelp.addEventListener('click', ()=> modal.style.display='none');
+  $('#closeHelp').addEventListener('click', ()=> modal.style.display='none');
   qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
   closeQS.addEventListener('click', ()=> qsModal.style.display='none');
 
-  rangeSel.addEventListener('change', ()=> customWrap.style.display = (rangeSel.value==='custom'?'inline-flex':'none'));
+  rangeSel.addEventListener('change', ()=> customWrap.style.display=(rangeSel.value==='custom'?'inline-flex':'none'));
   resetBtn.addEventListener('click', ()=>{
-    ok=err=0; okEl.textContent=0; errEl.textContent=0; 
+    ok=err=0; okEl.textContent=0; errEl.textContent=0;
     lastN=null; feedback.textContent=''; manualOut.textContent='—'; manualN.value='';
-    resetLearning(); newNumber();
+    weights=[1,1,1,1]; newNumber();
   });
 
-  // atalhos (inclui setas/WASD/espaço)
+  // atalhos
   document.addEventListener('keydown', (e)=>{
-    const kRaw = e.key || '';
-    const k = kRaw.toLowerCase();
-
+    const kRaw=e.key||''; const k=kRaw.toLowerCase();
     if(k==='n'){ e.preventDefault(); newNumber(); return; }
     if(kRaw==='Enter' && !e.ctrlKey){ e.preventDefault(); if(!fastCB.checked) verify(); return; }
     if(kRaw==='Enter' && e.ctrlKey){ e.preventDefault(); analyzeManual(); return; }
     if(k==='h'){ e.preventDefault(); modal.style.display='grid'; return; }
     if(k==='q'){ e.preventDefault(); qsModal.style.display='grid'; return; }
 
-    const el = document.activeElement;
-    const isEditable = (el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.isContentEditable || el.tagName==='SELECT'));
+    const el=document.activeElement;
+    const isEditable=el && (el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.isContentEditable||el.tagName==='SELECT');
     if(isEditable) return;
 
-    if(['arrowup','w'].includes(k)){ e.preventDefault(); tBasic.checked = true; return; }
-    if(['arrowdown','s'].includes(k)){ e.preventDefault(); tBounce.checked = true; return; }
-    if(['arrowleft','a'].includes(k)){ e.preventDefault(); sLeft.checked = true; return; }
-    if(['arrowright','d'].includes(k)){ e.preventDefault(); sRight.checked = true; return; }
-    if(k===' ' || k==='spacebar'){ e.preventDefault(); (tBasic.checked ? tBounce : tBasic).checked = true; return; }
+    if(['arrowup','w'].includes(k)){ e.preventDefault(); tBasic.checked=true; return; }
+    if(['arrowdown','s'].includes(k)){ e.preventDefault(); tBounce.checked=true; return; }
+    if(['arrowleft','a'].includes(k)){ e.preventDefault(); sLeft.checked=true; return; }
+    if(['arrowright','d'].includes(k)){ e.preventDefault(); sRight.checked=true; return; }
+    if(k===' '||k==='spacebar'){ e.preventDefault(); (tBasic.checked?tBounce:tBasic).checked=true; return; }
   });
 
-  manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
-  analyzeBtn.addEventListener('click', analyzeManual);
-
-  // toggle fast mode UI
-  function syncFastModeUI(){
-    const on = fastCB.checked;
-    advancedControls.classList.toggle('hide', on);
-    checkBtn.classList.toggle('hide', on); // sem botão Check no modo rápido
+  // analyze manual
+  function analyzeManual(){
+    const raw=manualN.value.trim();
+    if(!raw){ manualOut.textContent='—'; return; }
+    const n=Number(raw);
+    if(!Number.isFinite(n)||!Number.isInteger(n)||n<=0){
+      manualOut.innerHTML=`<span class="err">Enter a positive integer.</span>`; return;
+    }
+    const rule=correctRule(n);
+    (rule.tipo==='basic'?tBasic:tBounce).checked=true;
+    (rule.lado==='left'?sLeft:sRight).checked=true;
+    manualOut.innerHTML=`<span class="ok">${rule.tipo==='basic'?'Basic':'Bounce'} + ${rule.lado==='left'?'Left':'Right'}</span> <span class="muted">(N=${n}${rule.tipo==='bounce'?', use N+1='+(rule.m):''}; mod8=${rule.r})</span>`;
   }
-  fastCB.addEventListener('change', syncFastModeUI);
+  analyzeBtn.addEventListener('click', analyzeManual);
+  manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
 
-  // board clicks (robusto + touch)
+  // Fast Tap handlers (click + touch) + fallback inline onclick
   function getIdxFromEvent(ev){
-    const t = ev.target.closest('.item');
+    const t=ev.target.closest('.item');
     if(!t || !board.contains(t)) return null;
-    const idx = Number(t.dataset.idx);
-    return Number.isInteger(idx) ? idx : null;
+    const idx=Number(t.dataset.idx);
+    return Number.isInteger(idx)?idx:null;
   }
   function onTap(ev){
-    if(ev.type==='touchstart') ev.preventDefault(); // evita duplo disparo iOS
-    const idx = getIdxFromEvent(ev);
-    if(idx==null) return;
-    if(!fastCB.checked) return;
-
-    const el = ev.target.closest('.item');
+    if(ev.type==='touchstart') ev.preventDefault();
+    const idx=getIdxFromEvent(ev);
+    if(idx==null || !fastCB.checked) return;
+    const el=ev.target.closest('.item');
     if(el){ el.style.outline='2px solid #7aa2ff'; setTimeout(()=>el.style.outline='',120); }
-
     fastTap(idx);
   }
   board.addEventListener('click', onTap, {passive:true});
   board.addEventListener('touchstart', onTap, {passive:false});
-
-  // Fallback: onclick inline (garante Fast Tap mesmo se listeners falharem)
   Array.from(board.querySelectorAll('.item')).forEach((el)=>{
-    const idx = Number(el.dataset.idx);
-    if(Number.isInteger(idx)){
-      el.setAttribute('onclick', `window.fastTap && window.fastTap(${idx})`);
-    }
+    const idx=Number(el.dataset.idx);
+    if(Number.isInteger(idx)) el.setAttribute('onclick', `window.fastTap && window.fastTap(${idx})`);
   });
 
-  // ===== NEW: manual analysis =====
-  function analyzeManual(){
-    const raw = manualN.value.trim();
-    if(!raw){ manualOut.textContent='—'; return; }
-    const n = Number(raw);
-    if(!Number.isFinite(n) || !Number.isInteger(n) || n<=0){
-      manualOut.innerHTML = `<span class="err">Enter a positive integer.</span>`;
-      return;
-    }
-    const rule = correctRule(n);
-    (rule.tipo==='basic'? tBasic : tBounce).checked = true;
-    (rule.lado==='left'? sLeft : sRight).checked = true;
-    const tipoTxt = rule.tipo==='basic' ? 'Basic' : 'Bounce';
-    const ladoTxt = rule.lado==='left' ? 'Left' : 'Right';
-    manualOut.innerHTML = `<span class="ok">${tipoTxt} + ${ladoTxt}</span> <span class="muted">(N=${n}${rule.tipo==='bounce'?', use N+1='+(rule.m):''}; mod8=${rule.r})</span>`;
+  // UI toggle (esconde controles no Fast Tap)
+  function syncFastModeUI(){
+    const on=fastCB.checked;
+    advancedControls.classList.toggle('hide', on);
+    checkBtn.classList.toggle('hide', on);
+    hintEl.innerHTML = on
+      ? `Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)`
+      : `Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.`;
   }
+  fastCB.addEventListener('change', syncFastModeUI);
 
-  // start
-  resetLearning();
+  // primeira carga
   syncFastModeUI();
   newNumber();
 
