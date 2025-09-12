@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4</title>
+<title>Training QUINTA — v1.4.2</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -32,10 +32,10 @@
   .seg input{display:none}
   .seg label{padding:9px 12px;cursor:pointer}
   .seg input:checked + label{background:#2a3347}
-  /* ==== Modals (scroll apenas dentro) ==== */
+  /* ==== Modals (scroll only inside) ==== */
   .modal{position:fixed;inset:0;display:none;place-items:center;background:#0008;padding:20px;z-index:999}
   .modal .inner{max-width:900px;width:100%;background:#0f121d;border:1px solid #2a3242;border-radius:12px;padding:18px;
-                max-height:85vh;overflow:auto} /* <- rola só o conteúdo do modal */
+                max-height:85vh;overflow:auto}
   .modal h2{margin:0 0 8px;font-size:18px}
   .legend{font-size:14px;color:var(--muted)}
   .legend b{color:#cfd8ea}
@@ -130,7 +130,7 @@
       <div class="stat">Correct: <b id="ok">0</b></div>
       <div class="stat">Wrong: <b id="err">0</b></div>
       <div class="stat">Time: <b id="timer">0.0s</b></div>
-      <!-- Avg(20) removido -->
+      <!-- Avg(20) removed -->
     </div>
   </div>
 
@@ -138,7 +138,7 @@
     💡 Feedback? Bugs or suggestions →
     <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
   </div>
-</div>
+  </div>
 
 <!-- Help modal -->
 <div class="modal" id="modal">
@@ -155,25 +155,25 @@
           • Force 1 item among 5; the force item is always the <b>2nd from the left</b> (fixed).<br>
           • <b>Type:</b> even <i>N</i> → <b>Basic</b>; odd <i>N</i> → <b>Bounce</b>.<br>
           • <b>Side (Basic):</b> start on the <b>left</b> if <code>N ≡ 0 or 2 (mod 8)</code>, otherwise on the <b>right</b>.<br>
-          • <b>Side (Bounce):</b> use <b>N+1</b> with the same rule (and count <i>moves</i>).<br>
+          • <b>Side (Bounce):</b> apply the same rule to <b>N+1</b> (and count <i>moves</i> instead of points).<br>
           • “Basic” counts <i>points</i> 1,2,3,4,5,4,3,2,1…; “Bounce” counts <i>moves</i>.
         </div>
         <div class="hr"></div>
-        <h3 style="margin:0 0 6px">New features in v1.4</h3>
+        <h3 style="margin:0 0 6px">New features in v1.4.x</h3>
         <div class="legend">
-          • <b>Fast Tap Mode</b>: toque direto no quadrado onde você diria “1” — sem precisar definir tipo/side nem apertar Check.<br>
-          • <b>Speak number</b> (TTS) com <b>auto-idioma</b> e <b>seletor de voz</b> manual.<br>
-          • <b>Adaptive</b>: reforça os casos que estão mais lentos/difíceis.<br>
-          • <b>Modals roláveis</b> no celular (Help e Quick Start).<br>
-          • “Avg(20)” removido da UI, mantendo estatísticas simples (Time por rodada).
+          • <b>Fast Tap Mode</b>: just tap the square where you’d say “1” — no need to set type/side or press Check.<br>
+          • <b>Speak number</b> (TTS) with <b>auto language</b> and a <b>manual voice selector</b>.<br>
+          • <b>Adaptive</b>: increases the frequency of cases you’re slower at.<br>
+          • <b>Scrollable modals</b> on mobile (Help & Quick Start).<br>
+          • “Avg(20)” removed from the UI; per-round time kept simple.
         </div>
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Tips</h3>
         <div class="legend">
-          • Atalhos: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N.<br>
-          • Direções: <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Basic/Bounce • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Left/Right • <span class="kbd">Space</span> alterna tipo.<br>
-          • <b>Auto-advance</b>: ao acertar, o próximo número é gerado automaticamente.<br>
-          • Em iOS, as vozes aparecem após a primeira interação (limitação do Safari).
+          • Shortcuts: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N.<br>
+          • Arrows/WASD: <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Basic/Bounce • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Left/Right • <span class="kbd">Space</span> toggles type.<br>
+          • <b>Auto-advance</b>: on correct, next number is generated automatically.<br>
+          • iOS/Safari: voices appear after the first user interaction (platform limitation).
         </div>
       </div>
 
@@ -181,10 +181,10 @@
         <h3 style="margin:0 0 6px">Cheat-sheet</h3>
         <div class="legend">
           <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
-          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); else Right. <br/>
-          <b>Side (Bounce):</b> apply rule to N+1. <br/>
-          <b>Fast Tap:</b> toque onde você diria “1”. <br/>
-          <b>TTS:</b> marque “Speak number” e, se quiser, escolha a voz no seletor ao lado.
+          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); otherwise Right. <br/>
+          <b>Side (Bounce):</b> apply the same rule to N+1. <br/>
+          <b>Fast Tap:</b> tap where you’d say “1”. <br/>
+          <b>TTS:</b> check “Speak number” and (optionally) pick a voice in the dropdown.
         </div>
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">About the book</h3>
@@ -219,15 +219,15 @@
         <ol class="legend" style="padding-left:18px">
           <li>Choose a <b>Range</b> (or set <b>Custom</b>). Keep <b>Adaptive</b> on.</li>
           <li>Press <b>Generate number</b> (<span class="kbd">N</span>).</li>
-          <li><b>Fast Tap Mode</b>: toque onde diria “1”. (Ou desligue para usar Type/Side + Check.)</li>
-          <li>(Optional) Enable <b>Speak number</b> e selecione uma voz no dropdown.</li>
-          <li>Ao acertar, um novo número é gerado automaticamente.</li>
+          <li><b>Fast Tap Mode</b>: tap where you’d say “1”. (Or turn it off to use Type/Side + Check.)</li>
+          <li>(Optional) Enable <b>Speak number</b> and select a voice from the dropdown.</li>
+          <li>On correct, a new number is generated automatically.</li>
         </ol>
 
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Manual mode</h3>
         <div class="legend">
-          Digite um <b>N</b> e clique <b>Find side &amp; type</b> (ou <span class="kbd">Ctrl+Enter</span>) para ver a resposta ideal.
+          Type any <b>N</b> and click <b>Find side &amp; type</b> (or <span class="kbd">Ctrl+Enter</span>) to see the ideal answer.
         </div>
       </div>
 
@@ -235,9 +235,9 @@
         <h3 style="margin:0 0 6px">Shortcuts & tips</h3>
         <div class="legend">
           <b>Shortcuts:</b> <span class="kbd">N</span>, <span class="kbd">Enter</span>, <span class="kbd">Ctrl+Enter</span>, <span class="kbd">H</span>, <span class="kbd">Q</span>.<br/>
-          <b>Arrows/WASD:</b> tipo e lado (quando não estiver em Fast Tap).<br/>
-          <b>TTS:</b> auto-idioma (navegador/HTML) + seletor manual; Safari iOS pode atrasar o carregamento das vozes até a 1ª interação.<br/>
-          <b>Reset:</b> limpa estatísticas e pesos adaptativos.
+          <b>Arrows/WASD:</b> type and side (when not in Fast Tap).<br/>
+          <b>TTS:</b> “Auto (by language)” uses your browser/system language; you can override it via the selector.<br/>
+          <b>Reset:</b> clears stats and adaptive weights.
         </div>
       </div>
     </div>
@@ -247,7 +247,7 @@
 <script>
 (()=>{
 
-  // ====== QS helpers ======
+  // ===== helpers =====
   const $ = s => document.querySelector(s);
   const numberEl=$('#number'),feedback=$('#feedback');
   const okEl=$('#ok'),errEl=$('#err'),timerEl=$('#timer');
@@ -265,12 +265,12 @@
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
   let weights=[1,1,1,1]; // BL, BR, bL, bR
 
-  // ====== timer ======
+  // ===== timer =====
   function now(){return performance.now()}
   function updateTimer(){ if(startTime){timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s';} requestAnimationFrame(updateTimer) }
   requestAnimationFrame(updateTimer);
 
-  // ====== range ======
+  // ===== range =====
   function currentRange(){
     if(rangeSel.value==='custom'){
       let a=parseInt(minN.value||'1',10), b=parseInt(maxN.value||'15',10);
@@ -279,7 +279,7 @@
     return rangeSel.value.split('-').map(x=>parseInt(x,10));
   }
 
-  // ====== rules ======
+  // ===== rules =====
   function correctRule(n){
     const tipo=(n%2===0)?'basic':'bounce';
     const m=(tipo==='bounce')?n+1:n;
@@ -294,7 +294,7 @@
     return 3;
   }
 
-  // ====== adaptive generator ======
+  // ===== adaptive generator =====
   function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
   function sampleBucketAvailable(a,b){
     const seen=new Set();
@@ -313,7 +313,7 @@
     return 0;
   }
 
-  // ====== TTS voices (auto + manual) ======
+  // ===== TTS voices (auto + manual) =====
   let _voices=[];
   function loadVoices(){
     _voices = window.speechSynthesis.getVoices() || [];
@@ -322,7 +322,7 @@
   function populateVoiceSelect(){
     const prev=voiceSel.value;
     voiceSel.innerHTML='<option value="">Auto (by language)</option>';
-    const preferred = ['pt-','en-','es-','fr-','de-','it-','ja-','zh-','ko-'];
+    const preferred = ['en-','pt-','es-','fr-','de-','it-','ja-','zh-','ko-'];
     const sorted=[..._voices].sort((a,b)=>{
       const ap = preferred.findIndex(p=>a.lang && a.lang.toLowerCase().startsWith(p));
       const bp = preferred.findIndex(p=>b.lang && b.lang.toLowerCase().startsWith(p));
@@ -334,14 +334,14 @@
       opt.textContent=`${v.lang} — ${v.name}`;
       voiceSel.appendChild(opt);
     });
-    // restaura seleção anterior se existir
     if([...voiceSel.options].some(o=>o.value===prev)) voiceSel.value=prev;
   }
   function getTargetLang(){
-    return document.documentElement.lang || navigator.language || 'pt-BR';
+    // Prioritize system/browser language, then <html lang>, then English
+    return navigator.language || document.documentElement.lang || 'en-US';
   }
   function pickBestVoice(target){
-    const t=target.toLowerCase(), base=t.split('-')[0];
+    const t=(target||'').toLowerCase(), base=t.split('-')[0];
     return _voices.find(v=>v.lang&&v.lang.toLowerCase()===t)
         || _voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(base))
         || null;
@@ -363,13 +363,12 @@
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
-  // iOS/Safari só libera vozes após interação; ainda assim tentamos carregar:
   loadVoices();
   if('onvoiceschanged' in speechSynthesis){
     speechSynthesis.onvoiceschanged = loadVoices;
   }
 
-  // ====== core flow ======
+  // ===== core flow =====
   function newNumber(){
     const[a,b]=currentRange();
     const targetBucket=pickBucket(a,b);
@@ -377,7 +376,7 @@
     while(tries++<400){
       const x=randInt(a,b);
       if(x===lastN && b>a) continue;
-      if(bucketFromRule(correctRule(x))===targetBucket){ candidate=x; break; }
+      if(bucketFromRule(correctRule(x))===targetBucket){candidate=x;break;}
     }
     if(candidate===null){ do{ candidate=(a===b? a : randInt(a,b)); } while(candidate===lastN && b>a); }
 
@@ -450,11 +449,11 @@
   }
   window.fastTap=fastTap; // fallback inline
 
-  // ====== events ======
+  // ===== events =====
   nextBtn.addEventListener('click', newNumber);
   checkBtn.addEventListener('click', ()=>{ if(!fastCB.checked) verify(); });
   helpBtn.addEventListener('click', ()=> modal.style.display='grid');
-  $('#closeHelp').addEventListener('click', ()=> modal.style.display='none');
+  closeHelp.addEventListener('click', ()=> modal.style.display='none');
   qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
   closeQS.addEventListener('click', ()=> qsModal.style.display='none');
 
@@ -465,7 +464,7 @@
     weights=[1,1,1,1]; newNumber();
   });
 
-  // atalhos
+  // shortcuts
   document.addEventListener('keydown', (e)=>{
     const kRaw=e.key||''; const k=kRaw.toLowerCase();
     if(k==='n'){ e.preventDefault(); newNumber(); return; }
@@ -485,7 +484,7 @@
     if(k===' '||k==='spacebar'){ e.preventDefault(); (tBasic.checked?tBounce:tBasic).checked=true; return; }
   });
 
-  // analyze manual
+  // manual analysis
   function analyzeManual(){
     const raw=manualN.value.trim();
     if(!raw){ manualOut.textContent='—'; return; }
@@ -501,7 +500,7 @@
   analyzeBtn.addEventListener('click', analyzeManual);
   manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
 
-  // Fast Tap handlers (click + touch) + fallback inline onclick
+  // Fast Tap handlers (click + touch) + inline fallback
   function getIdxFromEvent(ev){
     const t=ev.target.closest('.item');
     if(!t || !board.contains(t)) return null;
@@ -523,7 +522,7 @@
     if(Number.isInteger(idx)) el.setAttribute('onclick', `window.fastTap && window.fastTap(${idx})`);
   });
 
-  // UI toggle (esconde controles no Fast Tap)
+  // hide controls in Fast Tap
   function syncFastModeUI(){
     const on=fastCB.checked;
     advancedControls.classList.toggle('hide', on);
@@ -534,7 +533,7 @@
   }
   fastCB.addEventListener('change', syncFastModeUI);
 
-  // primeira carga
+  // start
   syncFastModeUI();
   newNumber();
 
