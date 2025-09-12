@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4.3</title>
+<title>Training QUINTA — v1.4.4</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -45,12 +45,24 @@
   .hide{display:none!important}
   footer{margin-top:12px;text-align:center;font-size:12px;color:#9aa3b2}
   select, input[type="number"]{background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px}
+
+  /* ===== Toast (motivational) ===== */
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:18px; max-width:90vw; background:#1d2433; color:#e6e6e6;
+    border:1px solid #2a3242; border-radius:12px; padding:10px 14px;
+    font-size:14px; opacity:0; pointer-events:none; z-index:2000;
+    box-shadow:0 6px 24px rgba(0,0,0,.35)
+  }
+  .toast.show{ animation:toastIn .2s ease-out forwards, toastOut .3s ease-in forwards 1.8s; }
+  @keyframes toastIn{ from{opacity:0; transform:translate(-50%,10px)} to{opacity:1; transform:translate(-50%,0)} }
+  @keyframes toastOut{ to{opacity:0; transform:translate(-50%,10px)} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Training <span class="muted">QUINTA — v1.4.3</span></h1>
+    <h1>Training <span class="muted">QUINTA — Quick Mechanics</span></h1>
 
     <div class="row" style="margin:6px 0 10px">
       <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
@@ -289,6 +301,9 @@
   </div>
 </div>
 
+<!-- Toast element -->
+<div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
+
 <script>
 (()=>{
 
@@ -310,6 +325,7 @@
   const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt');
   const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   const timeLegend=$('#timeLegend');
+  const toast=$('#toast');
 
   // ===== state =====
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
@@ -319,8 +335,8 @@
   let fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
   let slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
 
-  // motivational settings
-  const MOTIVATION_EVERY = 100;
+  // motivational settings — set to 5 for testing
+  const MOTIVATION_EVERY = 5;
   const motivational = [
     "Keep going!",
     "You’re doing great!",
@@ -332,6 +348,15 @@
     "You got this!",
     "Stay sharp!"
   ];
+
+  function showToast(msg){
+    if(!toast) return;
+    toast.textContent = msg;
+    toast.classList.remove('show');
+    // force reflow to restart animation
+    void toast.offsetWidth;
+    toast.classList.add('show');
+  }
 
   function updateTimeLegend(){
     if(timeLegend){
@@ -357,6 +382,7 @@
   function correctRule(n){
     const tipo=(n%2===0)?'basic':'bounce';
     const m=(tipo==='bounce')?n+1:n;
+    a: { /* keep a label to avoid accidental breaks when editing */ }
     const r=((m%8)+8)%8;
     const lado=(r===0||r===2)?'left':'right';
     return {tipo,lado,r,m};
@@ -482,12 +508,13 @@
     else weights[bucket]+= (1-weights[bucket])*0.05;
   }
 
-  // ===== motivational helper =====
+  // ===== motivational helper (toast) =====
   function maybeMotivate(){
     const total = ok + err;
     if (total>0 && total % MOTIVATION_EVERY === 0){
       const msg = motivational[Math.floor(Math.random()*motivational.length)];
-      feedback.innerHTML += `<div class="muted" style="margin-top:6px">${msg}</div>`;
+      // usa toast para não ser apagado pelo newNumber()
+      showToast(msg);
     }
   }
 
@@ -527,10 +554,6 @@
       setTimeout(newNumber,500);
     }else{
       err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You chose ${userTxt}. Ideal: <b>${idealTxt}</b>. — ${elapsed.toFixed(1)}s</span>`;
-      if(stepCB.checked && sim.log.length){
-        const path=sim.log.map(s=>s.pos+1).join(' → ');
-        feedback.innerHTML+=`<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
-      }
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
@@ -559,9 +582,9 @@
   nextBtn.addEventListener('click', newNumber);
   checkBtn.addEventListener('click', ()=>{ if(!fastCB.checked) verify(); });
   helpBtn.addEventListener('click', ()=> modal.style.display='grid');
-  closeHelp.addEventListener('click', ()=> modal.style.display='none');
+  $('#closeHelp')?.addEventListener('click', ()=> modal.style.display='none');
   qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
-  closeQS.addEventListener('click', ()=> qsModal.style.display='none');
+  $('#closeQS')?.addEventListener('click', ()=> qsModal.style.display='none');
 
   rangeSel.addEventListener('change', ()=> customWrap.style.display=(rangeSel.value==='custom'?'inline-flex':'none'));
   resetBtn.addEventListener('click', ()=>{
