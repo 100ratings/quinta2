@@ -78,6 +78,11 @@
 
       <span class="pill"><label><input id="adaptiveCB" type="checkbox" checked> Adaptive</label></span>
 
+      <!-- NEW: Adaptive settings button (only active when Adaptive is ON) -->
+      <span class="pill">
+        <button id="adaptCfgBtn" title="Adaptive settings" disabled>Adaptive settings ⚙️</button>
+      </span>
+
       <span class="pill"><label><input id="fastCB" type="checkbox" checked> Fast Tap Mode</label></span>
 
       <span class="pill">
@@ -132,6 +137,10 @@
       <div class="stat">Time: <b id="timer">0.0s</b></div>
       <!-- Avg(20) removed -->
     </div>
+
+    <!-- NEW: Legend right below Time -->
+    <div class="legend" id="timeLegend" style="margin-top:-4px">Good ≤ 3.0s • Slow ≥ 5.0s</div>
+
   </div>
 
   <div class="legend" style="margin-top:12px; text-align:center; font-size:13px">
@@ -244,6 +253,42 @@
   </div>
 </div>
 
+<!-- NEW: Adaptive Settings modal -->
+<div class="modal" id="adaptModal">
+  <div class="inner">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>Adaptive settings</h2>
+      <button id="closeAdapt" title="Close">Close</button>
+    </div>
+    <div class="hr"></div>
+    <div class="grid2">
+      <div>
+        <div class="legend">Define when your time is considered “fast” or “slow”.</div>
+        <div class="hr"></div>
+        <label class="legend">Fast if ≤
+          <input id="fastTh" type="number" min="0.1" step="0.1" style="width:90px"> s
+        </label>
+        <br>
+        <label class="legend">Slow if ≥
+          <input id="slowTh" type="number" min="0.1" step="0.1" style="width:90px"> s
+        </label>
+        <div class="legend" style="margin-top:8px">Rule: <b>Fast &lt; Slow</b>.</div>
+      </div>
+      <div>
+        <div class="legend">
+          • ≤ Fast: decreases the frequency of that bucket.<br>
+          • ≥ Slow: increases the frequency of that bucket.<br>
+          • Between Fast and Slow: gentle adjustment.
+        </div>
+      </div>
+    </div>
+    <div class="hr"></div>
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button id="saveAdapt" title="Save">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (()=>{
 
@@ -261,9 +306,23 @@
   const voiceSel=$('#voiceSel');
   const manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
   const board=$('#board'),advancedControls=$('#advancedControls'),hintEl=$('#hint');
+  const adaptCfgBtn=$('#adaptCfgBtn');
+  const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt');
+  const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
+  const timeLegend=$('#timeLegend');
 
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
   let weights=[1,1,1,1]; // BL, BR, bL, bR
+
+  // thresholds with defaults + persistence
+  let fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
+  let slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
+
+  function updateTimeLegend(){
+    if(timeLegend){
+      timeLegend.textContent = `Good ≤ ${fastThreshold.toFixed(1)}s • Slow ≥ ${slowThreshold.toFixed(1)}s`;
+    }
+  }
 
   // ===== timer =====
   function now(){return performance.now()}
@@ -402,9 +461,11 @@
   }
   function userSelection(){ return {tipo: (tBasic.checked?'basic':'bounce'), lado: (sLeft.checked?'left':'right')} }
 
+  // ===== adaptive weights (with custom thresholds) =====
   function updateAdaptiveWeights(bucket, elapsed){
     if(!adaptiveCB.checked) return;
-    const SLOW=5.0, FAST=3.0, UP=0.3, DOWN=0.2, MIN=0.2, MAX=3.0;
+    const SLOW = slowThreshold, FAST = fastThreshold;
+    const UP=0.3, DOWN=0.2, MIN=0.2, MAX=3.0;
     if(elapsed>=SLOW) weights[bucket]=Math.min(MAX,weights[bucket]+UP);
     else if(elapsed<=FAST) weights[bucket]=Math.max(MIN,weights[bucket]-DOWN);
     else weights[bucket]+= (1-weights[bucket])*0.05;
@@ -533,8 +594,37 @@
   }
   fastCB.addEventListener('change', syncFastModeUI);
 
+  // ===== Adaptive settings modal + UI sync =====
+  function openAdaptModal(){
+    fastThIn.value = fastThreshold.toFixed(1);
+    slowThIn.value = slowThreshold.toFixed(1);
+    adaptModal.style.display='grid';
+  }
+  function closeAdaptModal(){ adaptModal.style.display='none'; }
+
+  function syncAdaptiveUI(){
+    const on = adaptiveCB.checked;
+    adaptCfgBtn.disabled = !on;
+  }
+
+  adaptiveCB.addEventListener('change', syncAdaptiveUI);
+  adaptCfgBtn.addEventListener('click', ()=>{ if(!adaptCfgBtn.disabled) openAdaptModal(); });
+  closeAdapt.addEventListener('click', closeAdaptModal);
+  saveAdapt.addEventListener('click', ()=>{
+    const f = Number(fastThIn.value), s = Number(slowThIn.value);
+    if(!isFinite(f)||!isFinite(s)||f<=0||s<=0){ alert('Use positive numeric values.'); return; }
+    if(f >= s){ alert('Fast must be less than Slow.'); return; }
+    fastThreshold = f; slowThreshold = s;
+    localStorage.setItem('q_fastTh', String(fastThreshold));
+    localStorage.setItem('q_slowTh', String(slowThreshold));
+    updateTimeLegend();
+    closeAdaptModal();
+  });
+
   // start
   syncFastModeUI();
+  syncAdaptiveUI();
+  updateTimeLegend();
   newNumber();
 
 })();
