@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA</title>
+<title>Training QUINTA — v1.3 (long)</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -23,7 +23,9 @@
   .feedback{margin-top:8px;font-size:16px}
   .ok{color:var(--ok)} .err{color:var(--err)}
   .board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
-  .item{border:1px solid #2a3242;border-radius:10px;padding:10px;text-align:center}
+  .item{border:1px solid #2a3242;border-radius:10px;padding:10px;text-align:center;user-select:none}
+  .item.btn{cursor:pointer;transition:border-color .15s, background .15s}
+  .item.btn:hover{border-color:#3a4760;background:#182036}
   .force{outline:2px solid var(--accent)}
   .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
   .seg{display:flex;border:1px solid #2a3242;border-radius:10px;overflow:hidden}
@@ -38,6 +40,8 @@
   .hr{height:1px;background:#2a3242;margin:12px 0}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .manualResult{font-size:14px;margin-left:4px}
+  .hide{display:none!important}
+  footer{margin-top:12px;text-align:center;font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -72,6 +76,12 @@
       <span class="pill">
         <label><input id="adaptiveCB" type="checkbox" checked style="vertical-align:middle"> Adaptive</label>
       </span>
+      <span class="pill">
+        <label><input id="fastCB" type="checkbox" checked style="vertical-align:middle"> Fast Tap Mode</label>
+      </span>
+      <span class="pill">
+        <label><input id="ttsCB" type="checkbox" style="vertical-align:middle"> Speak number</label>
+      </span>
       <button id="resetBtn" title="Reset learning">Reset training</button>
     </div>
 
@@ -85,17 +95,17 @@
     </div>
 
     <div class="big" id="number">—</div>
-    <div class="legend" id="hint">Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.</div>
+    <div class="legend" id="hint">Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)</div>
 
-    <div class="board" aria-label="row of 5 items">
-      <div class="item">1st</div>
-      <div class="item force">2nd (force)</div>
-      <div class="item">3rd</div>
-      <div class="item">4th</div>
-      <div class="item">5th</div>
+    <div class="board" aria-label="row of 5 items" id="board">
+      <div class="item btn" data-idx="0">1st</div>
+      <div class="item force btn" data-idx="1">2nd (force)</div>
+      <div class="item btn" data-idx="2">3rd</div>
+      <div class="item btn" data-idx="3">4th</div>
+      <div class="item btn" data-idx="4">5th</div>
     </div>
 
-    <div class="controls">
+    <div class="controls" id="advancedControls">
       <div class="seg" role="radiogroup" aria-label="Counting type">
         <input id="tBasic" name="tipo" type="radio" checked><label for="tBasic">Basic</label>
         <input id="tBounce" name="tipo" type="radio"><label for="tBounce">Bounce</label>
@@ -113,15 +123,15 @@
       <div class="stat">Correct: <b id="ok">0</b></div>
       <div class="stat">Wrong: <b id="err">0</b></div>
       <div class="stat">Time: <b id="timer">0.0s</b></div>
+      <!-- Avg(20) removido a pedido -->
     </div>
-  </div> <!-- fecha .card -->
+  </div>
 
-  <!-- feedback visível no rodapé -->
   <div class="legend" style="margin-top:12px; text-align:center; font-size:13px">
     💡 Feedback? Bugs or suggestions →
     <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
   </div>
-</div> <!-- fecha .wrap -->
+</div>
 
 <!-- Help modal -->
 <div class="modal" id="modal">
@@ -146,7 +156,8 @@
         <div class="legend">
           • Shortcuts: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start.<br>
           • New: <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> → Basic/Bounce • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> → Left/Right • <span class="kbd">Space</span> toggles type.<br>
-          • <b>Auto-advance:</b> when correct, the next number is generated automatically; when wrong, nothing changes until you decide.
+          • <b>Auto-advance:</b> when correct, the next number is generated automatically; when wrong, nothing changes until you decide.<br>
+          • <b>Fast Tap Mode:</b> tap the square where you’d say “1”. No need to set type/side or press Check.
         </div>
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Mental example</h3>
@@ -163,7 +174,7 @@
           <b>Side (Basic):</b> start <b>Left</b> if N ≡ 0 or 2 (mod 8); otherwise <b>Right</b>. <br/>
           <b>Side (Bounce):</b> use <b>N+1</b> with the same rule. <br/>
           <b>Shortcuts:</b> <span class="kbd">N</span> • <span class="kbd">Enter</span> • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> • <span class="kbd">Q</span> •
-          <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Type • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b>.
+          <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Type • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b> • <b>Fast Tap Mode</b> • <b>Speak number</b>.
         </div>
 
         <div class="hr"></div>
@@ -205,7 +216,9 @@
           <li>Choose <b>Type</b>: even → <b>Basic</b>, odd → <b>Bounce</b>.</li>
           <li>Choose <b>Side</b> via the mod-8 rule.</li>
           <li>(Optional) Toggle <b>Step-by-step</b> to visualize.</li>
-          <li>Hit <b>Check</b> (<span class="kbd">Enter</span>). If correct, a new number appears automatically; if wrong, revise and tente novamente.</li>
+          <li>Hit <b>Check</b> (<span class="kbd">Enter</span>). If correct, a new number appears automatically; if wrong, revise and try again.</li>
+          <li>Or enable <b>Fast Tap Mode</b> and just tap where you’d say “1”.</li>
+          <li>(Optional) Enable <b>Speak number</b> to hear the number via TTS.</li>
           <li>Use <b>Reset training</b> to clear stats and weights.</li>
         </ol>
 
@@ -223,7 +236,7 @@
           <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); else Right. <br/>
           <b>Side (Bounce):</b> use N+1. <br/>
           <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start •
-          <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> Type • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b>.
+          <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> Type • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b> • <b>Fast Tap Mode</b> • <b>Speak number</b>.
         </div>
       </div>
     </div>
@@ -232,6 +245,7 @@
 
 <script>
 (()=>{
+
   // ===== utils =====
   const $ = sel => document.querySelector(sel);
   const numberEl = $('#number'), feedback = $('#feedback');
@@ -243,23 +257,28 @@
   const stepCB=$('#step');
   const rangeSel=$('#range'), customWrap=$('#customWrap'), minN=$('#minN'), maxN=$('#maxN');
   const adaptiveCB=$('#adaptiveCB');
-
+  const fastCB=$('#fastCB');
+  const ttsCB=$('#ttsCB');
   const manualN = $('#manualN');
   const analyzeBtn = $('#analyzeBtn');
   const manualOut = $('#manualOut');
-
   const qsBtn = $('#qsBtn');
   const qsModal = $('#qsModal');
   const closeQS = $('#closeQS');
+  const board = $('#board');
+  const advancedControls = $('#advancedControls');
+  const hintEl = $('#hint');
 
   let N=null, lastN=null, startTime=0, ok=0, err=0, locked=false;
-
-  // Weights per "case type" (BL, BR, bL, bR)
-  let weights = [1,1,1,1];
+  let times=[]; // rolling times (UI da média foi removida)
+  let weights = [1,1,1,1]; // BL, BR, bL, bR
 
   function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
   function now(){return performance.now()}
-  function updateTimer(){ if(startTime){ timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s'; } requestAnimationFrame(updateTimer) }
+  function updateTimer(){
+    if(startTime){ timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s'; }
+    requestAnimationFrame(updateTimer)
+  }
   requestAnimationFrame(updateTimer);
 
   function currentRange(){
@@ -315,6 +334,42 @@
     return 0;
   }
 
+  // ===== TTS: auto-idioma (navigator.lang → html lang) =====
+  let _voices=[], _voicesReady=false;
+  function loadVoices(){
+    _voices = window.speechSynthesis.getVoices() || [];
+    _voicesReady = _voices.length>0;
+  }
+  loadVoices();
+  if ('onvoiceschanged' in speechSynthesis) {
+    speechSynthesis.onvoiceschanged = () => { loadVoices(); };
+  }
+  function getTargetLang(){
+    // Prioriza idioma do navegador (viajando/OS), depois <html lang>, depois pt-BR
+    return (navigator.language || document.documentElement.lang || 'pt-BR');
+  }
+  function pickBestVoice(target){
+    if(!_voicesReady) loadVoices();
+    const t = (target||'').toLowerCase();
+    const base = t.split('-')[0];
+    return (
+      _voices.find(v=>v.lang && v.lang.toLowerCase()===t) ||
+      _voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(base)) ||
+      _voices[0] || null
+    );
+  }
+  function speakNumber(n){
+    if(!ttsCB.checked) return;
+    try{
+      const lang = getTargetLang();
+      const u = new SpeechSynthesisUtterance(String(n));
+      const v = pickBestVoice(lang);
+      if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang; }
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
   function newNumber(){
     const [a,b]=currentRange();
     const targetBucket = pickBucket(a,b);
@@ -337,6 +392,12 @@
     startTime = now();
     feedback.textContent='';
     locked=false;
+
+    hintEl.innerHTML = fastCB.checked
+      ? `Fast Tap Mode: <b>tap where you’d say “1”</b>. (Force is the <b>2nd from the left</b>.)`
+      : `Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.`;
+
+    speakNumber(N);
   }
 
   // ===== Simulation / verification =====
@@ -371,15 +432,13 @@
     return {tipo,lado};
   }
 
-  // ===== Adaptation by timings (FAST ≤3s; SLOW ≥5s) =====
+  // ===== learning / averages (UI da média removida) =====
   function resetLearning(){ weights = [1,1,1,1]; }
-
   function updateAdaptiveWeights(bucket, elapsedSec){
     if(!adaptiveCB.checked) return;
     const SLOW = 5.0, FAST = 3.0;
     const UP = 0.3, DOWN = 0.2;
     const MIN_W = 0.2, MAX_W = 3.0;
-
     if(elapsedSec >= SLOW){
       weights[bucket] = Math.min(MAX_W, weights[bucket] + UP);
     }else if(elapsedSec <= FAST){
@@ -388,6 +447,11 @@
       const toward1 = 0.05;
       weights[bucket] += (1 - weights[bucket]) * toward1;
     }
+  }
+  function pushTimeAndUpdateAvg(elapsed){
+    // Mantemos a lista de tempos para futuro, mas não exibimos Avg(20)
+    times.push(elapsed);
+    if(times.length>20) times.shift();
   }
 
   function verify(){
@@ -422,28 +486,40 @@
 
     const bucket = bucketFromRule(ideal);
     updateAdaptiveWeights(bucket, elapsed);
+    pushTimeAndUpdateAvg(elapsed);
   }
 
-  // ===== NEW: manual analysis =====
-  function analyzeManual(){
-    const raw = manualN.value.trim();
-    if(!raw){ manualOut.textContent='—'; return; }
-    const n = Number(raw);
-    if(!Number.isFinite(n) || !Number.isInteger(n) || n<=0){
-      manualOut.innerHTML = `<span class="err">Enter a positive integer.</span>`;
-      return;
+  // ===== fast tap mode =====
+  function fastTap(idx){
+    if(locked || N==null) return;
+    locked=true;
+
+    const elapsed = (now()-startTime)/1000;
+    const ideal = correctRule(N);
+    const startIdx = (ideal.lado==='left') ? 0 : 4; // onde você diria "1"
+    const isRight = (idx === startIdx);
+
+    if(isRight){
+      ok++;
+      feedback.innerHTML = `<span class="ok">Correct!</span> <span class="muted">(Start: <b>${ideal.lado==='left'?'Left':'Right'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>) — ${elapsed.toFixed(1)}s</span>`;
+      setTimeout(()=>{ newNumber(); }, 350);
+    }else{
+      err++;
+      feedback.innerHTML = `<span class="err">Wrong.</span> <span class="muted">You tapped ${idx+1}º. Ideal start is <b>${ideal.lado==='left'?'Left (1º)':'Right (5º)'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>. — ${elapsed.toFixed(1)}s</span>`;
     }
-    const rule = correctRule(n);
-    (rule.tipo==='basic'? tBasic : tBounce).checked = true;
-    (rule.lado==='left'? sLeft : sRight).checked = true;
-    const tipoTxt = rule.tipo==='basic' ? 'Basic' : 'Bounce';
-    const ladoTxt = rule.lado==='left' ? 'Left' : 'Right';
-    manualOut.innerHTML = `<span class="ok">${tipoTxt} + ${ladoTxt}</span> <span class="muted">(N=${n}${rule.tipo==='bounce'?', use N+1='+(rule.m):''}; mod8=${rule.r})</span>`;
+
+    okEl.textContent=ok; errEl.textContent=err;
+    const bucket = bucketFromRule(ideal);
+    updateAdaptiveWeights(bucket, elapsed);
+    pushTimeAndUpdateAvg(elapsed);
   }
+
+  // Exponho para fallback/onclick direto
+  window.fastTap = fastTap;
 
   // ===== events =====
   nextBtn.addEventListener('click', newNumber);
-  checkBtn.addEventListener('click', verify);
+  checkBtn.addEventListener('click', ()=> fastCB.checked ? null : verify());
   helpBtn.addEventListener('click', ()=> modal.style.display='grid');
   closeHelp.addEventListener('click', ()=> modal.style.display='none');
   qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
@@ -453,7 +529,7 @@
   resetBtn.addEventListener('click', ()=>{
     ok=err=0; okEl.textContent=0; errEl.textContent=0; 
     lastN=null; feedback.textContent=''; manualOut.textContent='—'; manualN.value='';
-    resetLearning();
+    resetLearning(); newNumber();
   });
 
   // atalhos (inclui setas/WASD/espaço)
@@ -462,7 +538,7 @@
     const k = kRaw.toLowerCase();
 
     if(k==='n'){ e.preventDefault(); newNumber(); return; }
-    if(kRaw==='Enter' && !e.ctrlKey){ e.preventDefault(); verify(); return; }
+    if(kRaw==='Enter' && !e.ctrlKey){ e.preventDefault(); if(!fastCB.checked) verify(); return; }
     if(kRaw==='Enter' && e.ctrlKey){ e.preventDefault(); analyzeManual(); return; }
     if(k==='h'){ e.preventDefault(); modal.style.display='grid'; return; }
     if(k==='q'){ e.preventDefault(); qsModal.style.display='grid'; return; }
@@ -481,8 +557,65 @@
   manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
   analyzeBtn.addEventListener('click', analyzeManual);
 
+  // toggle fast mode UI
+  function syncFastModeUI(){
+    const on = fastCB.checked;
+    advancedControls.classList.toggle('hide', on);
+    checkBtn.classList.toggle('hide', on); // sem botão Check no modo rápido
+  }
+  fastCB.addEventListener('change', syncFastModeUI);
+
+  // board clicks (robusto + touch)
+  function getIdxFromEvent(ev){
+    const t = ev.target.closest('.item');
+    if(!t || !board.contains(t)) return null;
+    const idx = Number(t.dataset.idx);
+    return Number.isInteger(idx) ? idx : null;
+  }
+  function onTap(ev){
+    if(ev.type==='touchstart') ev.preventDefault(); // evita duplo disparo iOS
+    const idx = getIdxFromEvent(ev);
+    if(idx==null) return;
+    if(!fastCB.checked) return;
+
+    const el = ev.target.closest('.item');
+    if(el){ el.style.outline='2px solid #7aa2ff'; setTimeout(()=>el.style.outline='',120); }
+
+    fastTap(idx);
+  }
+  board.addEventListener('click', onTap, {passive:true});
+  board.addEventListener('touchstart', onTap, {passive:false});
+
+  // Fallback: onclick inline (garante Fast Tap mesmo se listeners falharem)
+  Array.from(board.querySelectorAll('.item')).forEach((el)=>{
+    const idx = Number(el.dataset.idx);
+    if(Number.isInteger(idx)){
+      el.setAttribute('onclick', `window.fastTap && window.fastTap(${idx})`);
+    }
+  });
+
+  // ===== NEW: manual analysis =====
+  function analyzeManual(){
+    const raw = manualN.value.trim();
+    if(!raw){ manualOut.textContent='—'; return; }
+    const n = Number(raw);
+    if(!Number.isFinite(n) || !Number.isInteger(n) || n<=0){
+      manualOut.innerHTML = `<span class="err">Enter a positive integer.</span>`;
+      return;
+    }
+    const rule = correctRule(n);
+    (rule.tipo==='basic'? tBasic : tBounce).checked = true;
+    (rule.lado==='left'? sLeft : sRight).checked = true;
+    const tipoTxt = rule.tipo==='basic' ? 'Basic' : 'Bounce';
+    const ladoTxt = rule.lado==='left' ? 'Left' : 'Right';
+    manualOut.innerHTML = `<span class="ok">${tipoTxt} + ${ladoTxt}</span> <span class="muted">(N=${n}${rule.tipo==='bounce'?', use N+1='+(rule.m):''}; mod8=${rule.r})</span>`;
+  }
+
+  // start
   resetLearning();
+  syncFastModeUI();
   newNumber();
+
 })();
 </script>
 </body>
