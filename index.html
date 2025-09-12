@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4.5</title>
+<title>Training QUINTA — v1.4.6</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -45,24 +45,12 @@
   .hide{display:none!important}
   footer{margin-top:12px;text-align:center;font-size:12px;color:#9aa3b2}
   select, input[type="number"]{background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px}
-
-  /* ===== Toast (motivational) ===== */
-  .toast{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:18px; max-width:90vw; background:#1d2433; color:#e6e6e6;
-    border:1px solid #2a3242; border-radius:12px; padding:10px 14px;
-    font-size:14px; opacity:0; pointer-events:none; z-index:2000;
-    box-shadow:0 6px 24px rgba(0,0,0,.35)
-  }
-  .toast.show{ animation:toastIn .2s ease-out forwards, toastOut .3s ease-in forwards 1.8s; }
-  @keyframes toastIn{ from{opacity:0; transform:translate(-50%,10px)} to{opacity:1; transform:translate(-50%,0)} }
-  @keyframes toastOut{ to{opacity:0; transform:translate(-50%,10px)} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Training <span class="muted">QUINTA — v1.4.5</span></h1>
+    <h1>Training <span class="muted">QUINTA — v1.4.6</span></h1>
 
     <div class="row" style="margin:6px 0 10px">
       <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
@@ -300,12 +288,12 @@
   </div>
 </div>
 
-<!-- Easter Egg modal (at 300) -->
+<!-- Easter Egg modal (every 100) -->
 <div class="modal" id="eggModal">
   <div class="inner">
-    <h2>300 reps!</h2>
+    <h2 id="eggTitle">Milestone!</h2>
     <div class="legend" style="font-size:16px;margin:8px 0 14px">
-      <b>You’re good enough — go practice in the real world.</b>
+      <b id="eggMsg">You’re good enough — go practice in the real world.</b>
     </div>
     <div class="row" style="justify-content:flex-end;gap:8px">
       <button id="eggContinue">Continue training</button>
@@ -313,9 +301,6 @@
     </div>
   </div>
 </div>
-
-<!-- Toast element -->
-<div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 (()=>{
@@ -338,9 +323,8 @@
   const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt');
   const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   const timeLegend=$('#timeLegend');
-  const toast=$('#toast');
 
-  const eggModal=$('#eggModal'), eggContinue=$('#eggContinue'), eggReset=$('#eggReset');
+  const eggModal=$('#eggModal'), eggTitle=$('#eggTitle'), eggMsg=$('#eggMsg'), eggContinue=$('#eggContinue'), eggReset=$('#eggReset');
 
   // ===== state =====
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
@@ -349,25 +333,6 @@
   // thresholds with defaults + persistence
   let fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
   let slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
-
-  // motivational settings — set to 5 for testing (change to 100 later if quiser)
-  const MOTIVATION_EVERY = 5;
-  const motivational = [
-    "Keep going!","You’re doing great!","Stay focused!","Excellent work!","Keep the momentum!",
-    "Nice flow!","Great pace!","You got this!","Stay sharp!"
-  ];
-
-  // Easter egg
-  const EGG_AT = 300;
-  let eggShown = localStorage.getItem('q_eggShown') === '1';
-
-  function showToast(msg){
-    if(!toast) return;
-    toast.textContent = msg;
-    toast.classList.remove('show');
-    void toast.offsetWidth; // reflow
-    toast.classList.add('show');
-  }
 
   function updateTimeLegend(){
     if(timeLegend){
@@ -425,43 +390,24 @@
 
   // ===== TTS voices (auto + manual, dedup on iOS) =====
   let _voices=[];
-  function loadVoices(){
-    _voices = window.speechSynthesis.getVoices() || [];
-    populateVoiceSelect();
-  }
+  function loadVoices(){ _voices = window.speechSynthesis.getVoices() || []; populateVoiceSelect(); }
   function populateVoiceSelect(){
     const prev=voiceSel.value;
     voiceSel.innerHTML='<option value="">Auto (by language)</option>';
-
-    // Deduplicate per (lang|name) and pick best variant
-    const pickScore = v => {
-      const uri = (v.voiceURI || '').toLowerCase();
-      let s = 0;
-      if (v.localService) s += 1;                      // local/offline preferred
-      if (/premium|enhanced|siri/.test(uri)) s += 2;   // premium/enhanced Siri preferred
-      return s;
-    };
-    const byKey = new Map(); // key = lang|name
+    const pickScore = v => { const uri=(v.voiceURI||'').toLowerCase(); let s=0; if(v.localService)s+=1; if(/premium|enhanced|siri/.test(uri))s+=2; return s; };
+    const byKey=new Map();
     (_voices||[]).forEach(v=>{
-      const key = `${(v.lang||'').toLowerCase()}|${v.name||''}`;
-      const cur = byKey.get(key);
-      if (!cur || pickScore(v) > pickScore(cur)) byKey.set(key, v);
+      const key=`${(v.lang||'').toLowerCase()}|${v.name||''}`;
+      const cur=byKey.get(key);
+      if(!cur||pickScore(v)>pickScore(cur)) byKey.set(key,v);
     });
-
-    const preferred = ['en-','pt-','es-','fr-','de-','it-','ja-','zh-','ko-'];
-    const list = [...byKey.values()].sort((a,b)=>{
-      const ap = preferred.findIndex(p=>a.lang && a.lang.toLowerCase().startsWith(p));
-      const bp = preferred.findIndex(p=>b.lang && b.lang.toLowerCase().startsWith(p));
-      return (ap===-1)-(bp===-1) || (a.lang||'').localeCompare(b.lang||'') || a.name.localeCompare(b.name);
+    const preferred=['en-','pt-','es-','fr-','de-','it-','ja-','zh-','ko-'];
+    const list=[...byKey.values()].sort((a,b)=>{
+      const ap=preferred.findIndex(p=>a.lang&&a.lang.toLowerCase().startsWith(p));
+      const bp=preferred.findIndex(p=>b.lang&&b.lang.toLowerCase().startsWith(p));
+      return (ap===-1)-(bp===-1)||(a.lang||'').localeCompare(b.lang||'')||a.name.localeCompare(b.name);
     });
-
-    list.forEach(v=>{
-      const opt=document.createElement('option');
-      opt.value=v.name;
-      opt.textContent=`${v.lang} — ${v.name}`;
-      voiceSel.appendChild(opt);
-    });
-
+    list.forEach(v=>{ const opt=document.createElement('option'); opt.value=v.name; opt.textContent=`${v.lang} — ${v.name}`; voiceSel.appendChild(opt); });
     if([...voiceSel.options].some(o=>o.value===prev)) voiceSel.value=prev;
   }
   function getTargetLang(){ return navigator.language || document.documentElement.lang || 'en-US'; }
@@ -513,22 +459,21 @@
     else weights[bucket]+= (1-weights[bucket])*0.05;
   }
 
-  // ===== motivational & egg =====
-  function maybeMotivate(){
-    const total = ok + err;
-    if (total>0 && total % MOTIVATION_EVERY === 0){
-      const msg = motivational[Math.floor(Math.random()*motivational.length)];
-      showToast(msg);
-    }
-  }
+  // ===== Easter egg (every 100) =====
+  const EGG_EVERY = 100;
+  let lastEggMilestone = Number(localStorage.getItem('q_lastEggMilestone') || '0');
+
   function checkEasterEgg(){
     const total = ok + err;
-    if(!eggShown && total >= EGG_AT){
-      eggShown = true;
-      localStorage.setItem('q_eggShown','1');
+    const milestone = Math.floor(total / EGG_EVERY) * EGG_EVERY;
+    // Trigger only at exact multiples (100, 200, ...) and only once per milestone
+    if (milestone > 0 && total % EGG_EVERY === 0 && milestone !== lastEggMilestone){
+      lastEggMilestone = milestone;
+      localStorage.setItem('q_lastEggMilestone', String(lastEggMilestone));
+      if (eggTitle) eggTitle.textContent = `${milestone} reps!`;
+      if (eggMsg) eggMsg.textContent = `You’re good enough — go practice in the real world.`;
       eggModal.style.display='grid';
-      // voice (if enabled or even if not? Keep silent unless user turned on TTS)
-      if(ttsCB.checked) speakText("Three hundred reps! You're good enough — go practice in the real world.");
+      if(ttsCB.checked) speakText(`${milestone} reps! You're good enough — go practice in the real world.`);
       return true;
     }
     return false;
@@ -577,7 +522,7 @@
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
-    maybeMotivate();
+
     const egg = checkEasterEgg();
     if(!egg && sim.hit){ setTimeout(newNumber,500); }
   }
@@ -596,7 +541,7 @@
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
-    maybeMotivate();
+
     const egg = checkEasterEgg();
     if(!egg && isRight){ setTimeout(newNumber,350); }
   }
@@ -615,7 +560,8 @@
     ok=err=0; okEl.textContent=0; errEl.textContent=0;
     lastN=null; feedback.textContent=''; manualOut.textContent='—'; manualN.value='';
     weights=[1,1,1,1];
-    eggShown=false; localStorage.removeItem('q_eggShown');
+    localStorage.removeItem('q_lastEggMilestone');
+    lastEggMilestone = 0;
     newNumber();
   });
 
@@ -713,11 +659,12 @@
   // Easter egg buttons
   eggContinue.addEventListener('click', ()=>{
     eggModal.style.display='none';
-    // continue where you left off (doesn't auto-generate to emphasize the pause)
+    // pause preserved; user pode apertar N para continuar
   });
   eggReset.addEventListener('click', ()=>{
     ok=err=0; okEl.textContent=0; errEl.textContent=0;
-    eggShown=false; localStorage.removeItem('q_eggShown');
+    localStorage.removeItem('q_lastEggMilestone');
+    lastEggMilestone = 0;
     eggModal.style.display='none';
     newNumber();
   });
