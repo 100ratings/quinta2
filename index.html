@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4.2</title>
+<title>Training QUINTA — v1.4.3</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -43,14 +43,14 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .manualResult{font-size:14px;margin-left:4px}
   .hide{display:none!important}
-  footer{margin-top:12px;text-align:center;font-size:12px;color:var(--muted)}
+  footer{margin-top:12px;text-align:center;font-size:12px;color:#9aa3b2}
   select, input[type="number"]{background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Training <span class="muted">QUINTA — Quick Mechanics</span></h1>
+    <h1>Training <span class="muted">Training QUINTA — v1.4.3</span></h1>
 
     <div class="row" style="margin:6px 0 10px">
       <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
@@ -78,7 +78,7 @@
 
       <span class="pill"><label><input id="adaptiveCB" type="checkbox" checked> Adaptive</label></span>
 
-      <!-- NEW: Adaptive settings button (only active when Adaptive is ON) -->
+      <!-- Adaptive settings button (enabled only if Adaptive is ON) -->
       <span class="pill">
         <button id="adaptCfgBtn" title="Adaptive settings" disabled>Adaptive settings ⚙️</button>
       </span>
@@ -138,7 +138,7 @@
       <!-- Avg(20) removed -->
     </div>
 
-    <!-- NEW: Legend right below Time -->
+    <!-- Legend right below Time -->
     <div class="legend" id="timeLegend" style="margin-top:-4px">Good ≤ 3.0s • Slow ≥ 5.0s</div>
 
   </div>
@@ -147,7 +147,7 @@
     💡 Feedback? Bugs or suggestions →
     <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
   </div>
-  </div>
+</div>
 
 <!-- Help modal -->
 <div class="modal" id="modal">
@@ -253,7 +253,7 @@
   </div>
 </div>
 
-<!-- NEW: Adaptive Settings modal -->
+<!-- Adaptive Settings modal -->
 <div class="modal" id="adaptModal">
   <div class="inner">
     <div class="row" style="justify-content:space-between;align-items:center">
@@ -311,12 +311,27 @@
   const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   const timeLegend=$('#timeLegend');
 
+  // ===== state =====
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
   let weights=[1,1,1,1]; // BL, BR, bL, bR
 
   // thresholds with defaults + persistence
   let fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
   let slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
+
+  // motivational settings
+  const MOTIVATION_EVERY = 100;
+  const motivational = [
+    "Keep going!",
+    "You’re doing great!",
+    "Stay focused!",
+    "Excellent work!",
+    "Keep the momentum!",
+    "Nice flow!",
+    "Great pace!",
+    "You got this!",
+    "Stay sharp!"
+  ];
 
   function updateTimeLegend(){
     if(timeLegend){
@@ -372,7 +387,7 @@
     return 0;
   }
 
-  // ===== TTS voices (auto + manual) =====
+  // ===== TTS voices (auto + manual, dedup on iOS) =====
   let _voices=[];
   function loadVoices(){
     _voices = window.speechSynthesis.getVoices() || [];
@@ -381,18 +396,36 @@
   function populateVoiceSelect(){
     const prev=voiceSel.value;
     voiceSel.innerHTML='<option value="">Auto (by language)</option>';
+
+    // Deduplicate per (lang|name) and pick best variant
+    const pickScore = v => {
+      const uri = (v.voiceURI || '').toLowerCase();
+      let s = 0;
+      if (v.localService) s += 1;                      // local/offline preferred
+      if (/premium|enhanced|siri/.test(uri)) s += 2;   // premium/enhanced Siri preferred
+      return s;
+    };
+    const byKey = new Map(); // key = lang|name
+    (_voices||[]).forEach(v=>{
+      const key = `${(v.lang||'').toLowerCase()}|${v.name||''}`;
+      const cur = byKey.get(key);
+      if (!cur || pickScore(v) > pickScore(cur)) byKey.set(key, v);
+    });
+
     const preferred = ['en-','pt-','es-','fr-','de-','it-','ja-','zh-','ko-'];
-    const sorted=[..._voices].sort((a,b)=>{
+    const list = [...byKey.values()].sort((a,b)=>{
       const ap = preferred.findIndex(p=>a.lang && a.lang.toLowerCase().startsWith(p));
       const bp = preferred.findIndex(p=>b.lang && b.lang.toLowerCase().startsWith(p));
       return (ap===-1)-(bp===-1) || (a.lang||'').localeCompare(b.lang||'') || a.name.localeCompare(b.name);
     });
-    sorted.forEach(v=>{
+
+    list.forEach(v=>{
       const opt=document.createElement('option');
       opt.value=v.name;
       opt.textContent=`${v.lang} — ${v.name}`;
       voiceSel.appendChild(opt);
     });
+
     if([...voiceSel.options].some(o=>o.value===prev)) voiceSel.value=prev;
   }
   function getTargetLang(){
@@ -427,6 +460,37 @@
     speechSynthesis.onvoiceschanged = loadVoices;
   }
 
+  // ===== simulation & user selection =====
+  function simulate(n,tipo,lado,step=false){
+    const target=1; let pos=(lado==='left')?0:4; let dir=(lado==='left')?+1:-1; const log=[];
+    if(tipo==='basic'){
+      let count=0; while(count<n){ count++; if(step) log.push({count,pos}); if(count===n) break; pos+=dir; if(pos===4||pos===0) dir*=-1; }
+    }else{
+      let moves=0; while(moves<n){ pos+=dir; moves++; if(step) log.push({count:moves,pos}); if(pos===4||pos===0) dir*=-1; }
+    }
+    return {hit:(pos===target),pos,log};
+  }
+  function userSelection(){ return {tipo: (tBasic.checked?'basic':'bounce'), lado: (sLeft.checked?'left':'right')} }
+
+  // ===== adaptive weights (with custom thresholds) =====
+  function updateAdaptiveWeights(bucket, elapsed){
+    if(!adaptiveCB.checked) return;
+    const SLOW = slowThreshold, FAST = fastThreshold;
+    const UP=0.3, DOWN=0.2, MIN=0.2, MAX=3.0;
+    if(elapsed>=SLOW) weights[bucket]=Math.min(MAX,weights[bucket]+UP);
+    else if(elapsed<=FAST) weights[bucket]=Math.max(MIN,weights[bucket]-DOWN);
+    else weights[bucket]+= (1-weights[bucket])*0.05;
+  }
+
+  // ===== motivational helper =====
+  function maybeMotivate(){
+    const total = ok + err;
+    if (total>0 && total % MOTIVATION_EVERY === 0){
+      const msg = motivational[Math.floor(Math.random()*motivational.length)];
+      feedback.innerHTML += `<div class="muted" style="margin-top:6px">${msg}</div>`;
+    }
+  }
+
   // ===== core flow =====
   function newNumber(){
     const[a,b]=currentRange();
@@ -450,27 +514,6 @@
     speakNumber(N);
   }
 
-  function simulate(n,tipo,lado,step=false){
-    const target=1; let pos=(lado==='left')?0:4; let dir=(lado==='left')?+1:-1; const log=[];
-    if(tipo==='basic'){
-      let count=0; while(count<n){ count++; if(step) log.push({count,pos}); if(count===n) break; pos+=dir; if(pos===4||pos===0) dir*=-1; }
-    }else{
-      let moves=0; while(moves<n){ pos+=dir; moves++; if(step) log.push({count:moves,pos}); if(pos===4||pos===0) dir*=-1; }
-    }
-    return {hit:(pos===target),pos,log};
-  }
-  function userSelection(){ return {tipo: (tBasic.checked?'basic':'bounce'), lado: (sLeft.checked?'left':'right')} }
-
-  // ===== adaptive weights (with custom thresholds) =====
-  function updateAdaptiveWeights(bucket, elapsed){
-    if(!adaptiveCB.checked) return;
-    const SLOW = slowThreshold, FAST = fastThreshold;
-    const UP=0.3, DOWN=0.2, MIN=0.2, MAX=3.0;
-    if(elapsed>=SLOW) weights[bucket]=Math.min(MAX,weights[bucket]+UP);
-    else if(elapsed<=FAST) weights[bucket]=Math.max(MIN,weights[bucket]-DOWN);
-    else weights[bucket]+= (1-weights[bucket])*0.05;
-  }
-
   function verify(){
     if(locked||N==null) return; locked=true;
     const elapsed=(now()-startTime)/1000;
@@ -491,6 +534,7 @@
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
+    maybeMotivate();
   }
 
   function fastTap(idx){
@@ -507,6 +551,7 @@
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
+    maybeMotivate();
   }
   window.fastTap=fastTap; // fallback inline
 
@@ -525,7 +570,7 @@
     weights=[1,1,1,1]; newNumber();
   });
 
-  // shortcuts
+  // keyboard shortcuts
   document.addEventListener('keydown', (e)=>{
     const kRaw=e.key||''; const k=kRaw.toLowerCase();
     if(k==='n'){ e.preventDefault(); newNumber(); return; }
