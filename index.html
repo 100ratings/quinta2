@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Training QUINTA</title>
+<style>
+  :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:880px;margin:36px auto;padding:0 20px}
+  .card{background:var(--card);border:1px solid #202637;border-radius:12px;padding:18px}
+  h1{font-size:20px;margin:0 0 8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .big{font-size:28px;font-weight:700}
+  .muted{color:var(--muted)}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid #2a3242;background:#131827;font-size:12px}
+  button{background:#1d2433;color:var(--fg);border:1px solid #2a3242;border-radius:10px;padding:11px 14px;font-size:15px;cursor:pointer}
+  button:hover{border-color:#3a4760}
+  .kbd{font-family:ui-monospace,Consolas,Menlo,monospace;background:#111521;border:1px solid #273047;border-radius:6px;padding:2px 6px;font-size:12px}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+  .stat{background:#121726;border:1px solid #20283a;border-radius:8px;padding:8px 10px;font-size:13px}
+  .feedback{margin-top:8px;font-size:16px}
+  .ok{color:var(--ok)} .err{color:var(--err)}
+  .board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
+  .item{border:1px solid #2a3242;border-radius:10px;padding:10px;text-align:center}
+  .force{outline:2px solid var(--accent)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .seg{display:flex;border:1px solid #2a3242;border-radius:10px;overflow:hidden}
+  .seg input{display:none}
+  .seg label{padding:9px 12px;cursor:pointer}
+  .seg input:checked + label{background:#2a3347}
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:#0008;padding:20px}
+  .modal .inner{max-width:900px;width:100%;background:#0f121d;border:1px solid #2a3242;border-radius:12px;padding:18px}
+  .modal h2{margin:0 0 8px;font-size:18px}
+  .legend{font-size:14px;color:var(--muted)}
+  .legend b{color:#cfd8ea}
+  .hr{height:1px;background:#2a3242;margin:12px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .manualResult{font-size:14px;margin-left:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Training <span class="muted">QUINTA — Quick Mechanics</span></h1>
+
+    <div class="row" style="margin:6px 0 10px">
+      <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
+      <button id="checkBtn" title="Shortcut: Enter">Check <span class="kbd">Enter</span></button>
+      <button id="helpBtn" title="Shortcut: H">Help <span class="kbd">H</span></button>
+      <button id="qsBtn" title="Shortcut: Q">Quick Start Guide <span class="kbd">Q</span></button>
+
+      <span class="pill">Range: 
+        <select id="range">
+          <option value="1-40" selected>1–40 (default)</option>
+          <option value="1-15">1–15</option>
+          <option value="15-30">15–30</option>
+          <option value="1-30">1–30</option>
+          <option value="30-45">30–45</option>
+          <option value="45-60">45–60</option>
+          <option value="30-60">30–60</option>
+          <option value="1-60">1–60</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </span>
+      <span id="customWrap" class="pill" style="display:none">
+        <input id="minN" type="number" value="1" style="width:80px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px"> –
+        <input id="maxN" type="number" value="15" style="width:80px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px">
+      </span>
+
+      <span class="pill">
+        <label><input id="adaptiveCB" type="checkbox" checked style="vertical-align:middle"> Adaptive</label>
+      </span>
+      <button id="resetBtn" title="Reset learning">Reset training</button>
+    </div>
+
+    <div class="row" style="margin:0 0 8px">
+      <span class="pill">
+        Enter N:
+        <input id="manualN" type="number" inputmode="numeric" placeholder="e.g. 33" style="width:90px;margin-left:6px;background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px">
+      </span>
+      <button id="analyzeBtn" title="Shortcut: Ctrl+Enter">Find side & type</button>
+      <span id="manualOut" class="manualResult muted">—</span>
+    </div>
+
+    <div class="big" id="number">—</div>
+    <div class="legend" id="hint">Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.</div>
+
+    <div class="board" aria-label="row of 5 items">
+      <div class="item">1st</div>
+      <div class="item force">2nd (force)</div>
+      <div class="item">3rd</div>
+      <div class="item">4th</div>
+      <div class="item">5th</div>
+    </div>
+
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Counting type">
+        <input id="tBasic" name="tipo" type="radio" checked><label for="tBasic">Basic</label>
+        <input id="tBounce" name="tipo" type="radio"><label for="tBounce">Bounce</label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="Starting side">
+        <input id="sLeft" name="side" type="radio" checked><label for="sLeft">Left</label>
+        <input id="sRight" name="side" type="radio"><label for="sRight">Right</label>
+      </div>
+      <span class="pill">Step-by-step <input id="step" type="checkbox" style="vertical-align:middle"></span>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="stats">
+      <div class="stat">Correct: <b id="ok">0</b></div>
+      <div class="stat">Wrong: <b id="err">0</b></div>
+      <div class="stat">Time: <b id="timer">0.0s</b></div>
+    </div>
+  </div> <!-- fecha .card -->
+
+  <!-- feedback visível no rodapé -->
+  <div class="legend" style="margin-top:12px; text-align:center; font-size:13px">
+    💡 Feedback? Bugs or suggestions →
+    <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
+  </div>
+</div> <!-- fecha .wrap -->
+
+<!-- Help modal -->
+<div class="modal" id="modal">
+  <div class="inner">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>Quick rules & reminders</h2>
+      <button id="closeHelp">Close</button>
+    </div>
+    <div class="hr"></div>
+    <div class="grid2">
+      <div>
+        <h3 style="margin:0 0 6px">Core of the method</h3>
+        <div class="legend">
+          • Force 1 item among 5; the force item is always the <b>2nd from the left</b> (fixed).<br>
+          • <b>Type:</b> even <i>N</i> → <b>Basic</b>; odd <i>N</i> → <b>Bounce</b>.<br>
+          • <b>Side (Basic):</b> start on the <b>left</b> if <code>N ≡ 0 or 2 (mod 8)</code>, otherwise on the <b>right</b>.<br>
+          • <b>Side (Bounce):</b> use <b>N+1</b> with the same rule (and count <i>moves</i>).<br>
+          • “Basic” counts <i>points</i> 1,2,3,4,5,4,3,2,1…; “Bounce” counts <i>moves</i>.
+        </div>
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Tips</h3>
+        <div class="legend">
+          • Shortcuts: <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start.<br>
+          • New: <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> → Basic/Bounce • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> → Left/Right • <span class="kbd">Space</span> toggles type.<br>
+          • <b>Auto-advance:</b> when correct, the next number is generated automatically; when wrong, nothing changes until you decide.
+        </div>
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Mental example</h3>
+        <div class="legend">
+          N=22 → Basic; 22 ≡ 6 (mod 8) ⇒ start on the <b>Right</b>.<br>
+          N=33 → Bounce; use 34 ⇒ 34 ≡ 2 (mod 8) ⇒ start on the <b>Left</b>.
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin:0 0 6px">Cheat-sheet</h3>
+        <div class="legend">
+          <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
+          <b>Side (Basic):</b> start <b>Left</b> if N ≡ 0 or 2 (mod 8); otherwise <b>Right</b>. <br/>
+          <b>Side (Bounce):</b> use <b>N+1</b> with the same rule. <br/>
+          <b>Shortcuts:</b> <span class="kbd">N</span> • <span class="kbd">Enter</span> • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> • <span class="kbd">Q</span> •
+          <span class="kbd">↑/↓</span>/<span class="kbd">W/S</span> Type • <span class="kbd">←/→</span>/<span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b>.
+        </div>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">About the book</h3>
+        <div class="legend">
+          If you want to really understand how QUINTA works in depth, get the book 
+          <i>Quinta: A Miracle in Five Parts</i> here: 
+          <a href="https://phillsmithcreative.com/collections/books/products/quinta-book" target="_blank">
+            official link
+          </a>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Start Guide modal -->
+<div class="modal" id="qsModal">
+  <div class="inner">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>Quick Start Guide</h2>
+      <button id="closeQS" title="Close">Close</button>
+    </div>
+    <div class="hr"></div>
+
+    <div class="grid2">
+      <div>
+        <h3 style="margin:0 0 6px">What this trainer is</h3>
+        <div class="legend">
+          This tool helps you master <b>QUINTA</b> mechanics: forcing the <b>2nd from the left</b> among 5 items by deciding the correct
+          <b>Counting Type</b> and <b>Starting Side</b> for any number <i>N</i>.
+        </div>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">How to use (2-minute flow)</h3>
+        <ol class="legend" style="padding-left:18px">
+          <li>Pick a <b>Range</b> (or set a <b>Custom</b> min/max). Leave <b>Adaptive</b> on.</li>
+          <li>Press <b>Generate number</b> (<span class="kbd">N</span>) or type in <b>Enter N</b> and click <b>Find side &amp; type</b>.</li>
+          <li>Choose <b>Type</b>: even → <b>Basic</b>, odd → <b>Bounce</b>.</li>
+          <li>Choose <b>Side</b> via the mod-8 rule.</li>
+          <li>(Optional) Toggle <b>Step-by-step</b> to visualize.</li>
+          <li>Hit <b>Check</b> (<span class="kbd">Enter</span>). If correct, a new number appears automatically; if wrong, revise and tente novamente.</li>
+          <li>Use <b>Reset training</b> to clear stats and weights.</li>
+        </ol>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Manual mode</h3>
+        <div class="legend">
+          Type any <b>N</b> and click <b>Find side &amp; type</b> (or <span class="kbd">Ctrl+Enter</span>).
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin:0 0 6px">Cheat-sheet</h3>
+        <div class="legend">
+          <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
+          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); else Right. <br/>
+          <b>Side (Bounce):</b> use N+1. <br/>
+          <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">Ctrl+Enter</span> Analyze N • <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start •
+          <span class="kbd">↑/↓</span> or <span class="kbd">W/S</span> Type • <span class="kbd">←/→</span> or <span class="kbd">A/D</span> Side • <span class="kbd">Space</span> Toggle Type • <b>Auto-advance on correct</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+  // ===== utils =====
+  const $ = sel => document.querySelector(sel);
+  const numberEl = $('#number'), feedback = $('#feedback');
+  const okEl=$('#ok'), errEl=$('#err'), timerEl=$('#timer');
+  const nextBtn=$('#nextBtn'), checkBtn=$('#checkBtn'), resetBtn=$('#resetBtn');
+  const helpBtn=$('#helpBtn'), modal=$('#modal'), closeHelp=$('#closeHelp');
+  const tBasic=$('#tBasic'), tBounce=$('#tBounce');
+  const sLeft=$('#sLeft'), sRight=$('#sRight');
+  const stepCB=$('#step');
+  const rangeSel=$('#range'), customWrap=$('#customWrap'), minN=$('#minN'), maxN=$('#maxN');
+  const adaptiveCB=$('#adaptiveCB');
+
+  const manualN = $('#manualN');
+  const analyzeBtn = $('#analyzeBtn');
+  const manualOut = $('#manualOut');
+
+  const qsBtn = $('#qsBtn');
+  const qsModal = $('#qsModal');
+  const closeQS = $('#closeQS');
+
+  let N=null, lastN=null, startTime=0, ok=0, err=0, locked=false;
+
+  // Weights per "case type" (BL, BR, bL, bR)
+  let weights = [1,1,1,1];
+
+  function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function now(){return performance.now()}
+  function updateTimer(){ if(startTime){ timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s'; } requestAnimationFrame(updateTimer) }
+  requestAnimationFrame(updateTimer);
+
+  function currentRange(){
+    if(rangeSel.value==='custom'){
+      let a=parseInt(minN.value||'1',10), b=parseInt(maxN.value||'15',10);
+      if(a>b) [a,b]=[b,a];
+      return [Math.max(1,a), Math.min(9999,b)];
+    }
+    const [a,b]=rangeSel.value.split('-').map(x=>parseInt(x,10)); return [a,b];
+  }
+
+  // ===== THURSDAY rules =====
+  function correctRule(n){
+    const tipo = (n%2===0)? 'basic':'bounce';
+    const m = (tipo==='bounce')? n+1 : n;
+    const r = ((m%8)+8)%8;
+    const lado = (r===0 || r===2)? 'left':'right';
+    return {tipo,lado, r, m};
+  }
+  function bucketFromRule(rule){
+    if(rule.tipo==='basic' && rule.lado==='left') return 0;
+    if(rule.tipo==='basic' && rule.lado==='right') return 1;
+    if(rule.tipo==='bounce' && rule.lado==='left') return 2;
+    return 3; // bounce+right
+  }
+
+  // ===== Number generation: no immediate repeat + adaptive bias =====
+  function sampleBucketAvailable(a, b){
+    const seen = new Set();
+    for(let i=0;i<400 && seen.size<4;i++){
+      seen.add(bucketFromRule(correctRule(randInt(a,b))));
+    }
+    return seen;
+  }
+
+  function pickBucket(a, b){
+    const avail = sampleBucketAvailable(a, b);
+    const effective = [0,0,0,0];
+    let sum=0;
+    for(let i=0;i<4;i++){
+      if(avail.has(i)){
+        effective[i] = adaptiveCB.checked ? Math.max(0.05, weights[i]) : 1;
+        sum += effective[i];
+      }
+    }
+    let r = Math.random()*sum;
+    for(let i=0;i<4;i++){
+      if(!avail.has(i)) continue;
+      if(r < effective[i]) return i;
+      r -= effective[i];
+    }
+    for(let i=0;i<4;i++) if(avail.has(i)) return i;
+    return 0;
+  }
+
+  function newNumber(){
+    const [a,b]=currentRange();
+    const targetBucket = pickBucket(a,b);
+
+    let candidate = null, tries = 0;
+    const MAX_TRIES = 400;
+    while(tries++ < MAX_TRIES){
+      const x = randInt(a,b);
+      if(x === lastN && b>a) continue;
+      if(bucketFromRule(correctRule(x)) === targetBucket){ candidate = x; break; }
+    }
+    if(candidate===null){
+      do { candidate = (a===b? a : randInt(a,b)); } while(candidate===lastN && b>a);
+    }
+
+    N = candidate;
+    lastN = N;
+
+    numberEl.textContent = String(N);
+    startTime = now();
+    feedback.textContent='';
+    locked=false;
+  }
+
+  // ===== Simulation / verification =====
+  function simulate(n, tipo, lado, step=false){
+    const target=1;
+    let pos = (lado==='left')? 0: 4;
+    let dir = (lado==='left')? +1 : -1;
+    let log=[];
+    if(tipo==='basic'){
+      let count=0;
+      while(count<n){
+        count++;
+        if(step) log.push({count,pos});
+        if(count===n) break;
+        pos += dir;
+        if(pos===4 || pos===0) dir*=-1;
+      }
+    }else{
+      let moves=0;
+      while(moves<n){
+        pos += dir; moves++;
+        if(step) log.push({count:moves,pos});
+        if(pos===4 || pos===0) dir*=-1;
+      }
+    }
+    return {hit:(pos===target), pos, log};
+  }
+
+  function userSelection(){
+    const tipo = tBasic.checked? 'basic':'bounce';
+    const lado = sLeft.checked? 'left':'right';
+    return {tipo,lado};
+  }
+
+  // ===== Adaptation by timings (FAST ≤3s; SLOW ≥5s) =====
+  function resetLearning(){ weights = [1,1,1,1]; }
+
+  function updateAdaptiveWeights(bucket, elapsedSec){
+    if(!adaptiveCB.checked) return;
+    const SLOW = 5.0, FAST = 3.0;
+    const UP = 0.3, DOWN = 0.2;
+    const MIN_W = 0.2, MAX_W = 3.0;
+
+    if(elapsedSec >= SLOW){
+      weights[bucket] = Math.min(MAX_W, weights[bucket] + UP);
+    }else if(elapsedSec <= FAST){
+      weights[bucket] = Math.max(MIN_W, weights[bucket] - DOWN);
+    }else{
+      const toward1 = 0.05;
+      weights[bucket] += (1 - weights[bucket]) * toward1;
+    }
+  }
+
+  function verify(){
+    if(locked || N==null) return;
+    locked=true;
+
+    const elapsed = (now()-startTime)/1000;
+    const ideal = correctRule(N);
+    const sel = userSelection();
+    const sim  = simulate(N, sel.tipo, sel.lado, stepCB.checked);
+
+    const idealTxt = `${ideal.tipo==='basic'?'Basic':'Bounce'} + ${ideal.lado==='left'?'Left':'Right'}`;
+    const userTxt  = `${sel.tipo==='basic'?'Basic':'Bounce'} + ${sel.lado==='left'?'Left':'Right'}`;
+
+    const isRight = sim.hit;
+
+    if(isRight){
+      ok++;
+      feedback.innerHTML = `<span class="ok">Correct!</span> <span class="muted">(${userTxt}) — ${elapsed.toFixed(1)}s</span>`;
+      setTimeout(()=>{ newNumber(); }, 500);
+    }else{
+      err++;
+      feedback.innerHTML = `<span class="err">Wrong.</span> <span class="muted">You chose ${userTxt}. Ideal: <b>${idealTxt}</b>. — ${elapsed.toFixed(1)}s</span>`;
+    }
+
+    if(stepCB.checked && sim.log.length){
+      const path = sim.log.map(s=>s.pos+1).join(' → ');
+      feedback.innerHTML += `<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
+    }
+
+    okEl.textContent=ok; errEl.textContent=err;
+
+    const bucket = bucketFromRule(ideal);
+    updateAdaptiveWeights(bucket, elapsed);
+  }
+
+  // ===== NEW: manual analysis =====
+  function analyzeManual(){
+    const raw = manualN.value.trim();
+    if(!raw){ manualOut.textContent='—'; return; }
+    const n = Number(raw);
+    if(!Number.isFinite(n) || !Number.isInteger(n) || n<=0){
+      manualOut.innerHTML = `<span class="err">Enter a positive integer.</span>`;
+      return;
+    }
+    const rule = correctRule(n);
+    (rule.tipo==='basic'? tBasic : tBounce).checked = true;
+    (rule.lado==='left'? sLeft : sRight).checked = true;
+    const tipoTxt = rule.tipo==='basic' ? 'Basic' : 'Bounce';
+    const ladoTxt = rule.lado==='left' ? 'Left' : 'Right';
+    manualOut.innerHTML = `<span class="ok">${tipoTxt} + ${ladoTxt}</span> <span class="muted">(N=${n}${rule.tipo==='bounce'?', use N+1='+(rule.m):''}; mod8=${rule.r})</span>`;
+  }
+
+  // ===== events =====
+  nextBtn.addEventListener('click', newNumber);
+  checkBtn.addEventListener('click', verify);
+  helpBtn.addEventListener('click', ()=> modal.style.display='grid');
+  closeHelp.addEventListener('click', ()=> modal.style.display='none');
+  qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
+  closeQS.addEventListener('click', ()=> qsModal.style.display='none');
+
+  rangeSel.addEventListener('change', ()=> customWrap.style.display = (rangeSel.value==='custom'?'inline-flex':'none'));
+  resetBtn.addEventListener('click', ()=>{
+    ok=err=0; okEl.textContent=0; errEl.textContent=0; 
+    lastN=null; feedback.textContent=''; manualOut.textContent='—'; manualN.value='';
+    resetLearning();
+  });
+
+  // atalhos (inclui setas/WASD/espaço)
+  document.addEventListener('keydown', (e)=>{
+    const kRaw = e.key || '';
+    const k = kRaw.toLowerCase();
+
+    if(k==='n'){ e.preventDefault(); newNumber(); return; }
+    if(kRaw==='Enter' && !e.ctrlKey){ e.preventDefault(); verify(); return; }
+    if(kRaw==='Enter' && e.ctrlKey){ e.preventDefault(); analyzeManual(); return; }
+    if(k==='h'){ e.preventDefault(); modal.style.display='grid'; return; }
+    if(k==='q'){ e.preventDefault(); qsModal.style.display='grid'; return; }
+
+    const el = document.activeElement;
+    const isEditable = (el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.isContentEditable || el.tagName==='SELECT'));
+    if(isEditable) return;
+
+    if(['arrowup','w'].includes(k)){ e.preventDefault(); tBasic.checked = true; return; }
+    if(['arrowdown','s'].includes(k)){ e.preventDefault(); tBounce.checked = true; return; }
+    if(['arrowleft','a'].includes(k)){ e.preventDefault(); sLeft.checked = true; return; }
+    if(['arrowright','d'].includes(k)){ e.preventDefault(); sRight.checked = true; return; }
+    if(k===' ' || k==='spacebar'){ e.preventDefault(); (tBasic.checked ? tBounce : tBasic).checked = true; return; }
+  });
+
+  manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
+  analyzeBtn.addEventListener('click', analyzeManual);
+
+  resetLearning();
+  newNumber();
+})();
+</script>
+</body>
+</html>
