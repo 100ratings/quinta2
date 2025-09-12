@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4.4</title>
+<title>Training QUINTA — v1.4.5</title>
 <style>
   :root{--bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;--card:#151923;--accent:#7aa2ff}
   *{box-sizing:border-box}
@@ -62,7 +62,7 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Training <span class="muted">QUINTA — Quick Mechanics</span></h1>
+    <h1>Training <span class="muted">QUINTA — v1.4.5</span></h1>
 
     <div class="row" style="margin:6px 0 10px">
       <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
@@ -147,7 +147,6 @@
       <div class="stat">Correct: <b id="ok">0</b></div>
       <div class="stat">Wrong: <b id="err">0</b></div>
       <div class="stat">Time: <b id="timer">0.0s</b></div>
-      <!-- Avg(20) removed -->
     </div>
 
     <!-- Legend right below Time -->
@@ -301,6 +300,20 @@
   </div>
 </div>
 
+<!-- Easter Egg modal (at 300) -->
+<div class="modal" id="eggModal">
+  <div class="inner">
+    <h2>300 reps!</h2>
+    <div class="legend" style="font-size:16px;margin:8px 0 14px">
+      <b>You’re good enough — go practice in the real world.</b>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:8px">
+      <button id="eggContinue">Continue training</button>
+      <button id="eggReset">Reset counters</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast element -->
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
@@ -327,6 +340,8 @@
   const timeLegend=$('#timeLegend');
   const toast=$('#toast');
 
+  const eggModal=$('#eggModal'), eggContinue=$('#eggContinue'), eggReset=$('#eggReset');
+
   // ===== state =====
   let N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
   let weights=[1,1,1,1]; // BL, BR, bL, bR
@@ -335,26 +350,22 @@
   let fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
   let slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
 
-  // motivational settings — set to 5 for testing
+  // motivational settings — set to 5 for testing (change to 100 later if quiser)
   const MOTIVATION_EVERY = 5;
   const motivational = [
-    "Keep going!",
-    "You’re doing great!",
-    "Stay focused!",
-    "Excellent work!",
-    "Keep the momentum!",
-    "Nice flow!",
-    "Great pace!",
-    "You got this!",
-    "Stay sharp!"
+    "Keep going!","You’re doing great!","Stay focused!","Excellent work!","Keep the momentum!",
+    "Nice flow!","Great pace!","You got this!","Stay sharp!"
   ];
+
+  // Easter egg
+  const EGG_AT = 300;
+  let eggShown = localStorage.getItem('q_eggShown') === '1';
 
   function showToast(msg){
     if(!toast) return;
     toast.textContent = msg;
     toast.classList.remove('show');
-    // force reflow to restart animation
-    void toast.offsetWidth;
+    void toast.offsetWidth; // reflow
     toast.classList.add('show');
   }
 
@@ -382,7 +393,6 @@
   function correctRule(n){
     const tipo=(n%2===0)?'basic':'bounce';
     const m=(tipo==='bounce')?n+1:n;
-    a: { /* keep a label to avoid accidental breaks when editing */ }
     const r=((m%8)+8)%8;
     const lado=(r===0||r===2)?'left':'right';
     return {tipo,lado,r,m};
@@ -454,20 +464,16 @@
 
     if([...voiceSel.options].some(o=>o.value===prev)) voiceSel.value=prev;
   }
-  function getTargetLang(){
-    // Prioritize system/browser language, then <html lang>, then English
-    return navigator.language || document.documentElement.lang || 'en-US';
-  }
+  function getTargetLang(){ return navigator.language || document.documentElement.lang || 'en-US'; }
   function pickBestVoice(target){
     const t=(target||'').toLowerCase(), base=t.split('-')[0];
     return _voices.find(v=>v.lang&&v.lang.toLowerCase()===t)
         || _voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(base))
         || null;
   }
-  function speakNumber(n){
-    if(!ttsCB.checked) return;
+  function speakText(msg){
     try{
-      const u=new SpeechSynthesisUtterance(String(n));
+      const u=new SpeechSynthesisUtterance(String(msg));
       const selName = voiceSel.value;
       if(selName){
         const v=_voices.find(v=>v.name===selName);
@@ -481,10 +487,9 @@
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
+  function speakNumber(n){ if(ttsCB.checked) speakText(n); }
   loadVoices();
-  if('onvoiceschanged' in speechSynthesis){
-    speechSynthesis.onvoiceschanged = loadVoices;
-  }
+  if('onvoiceschanged' in speechSynthesis){ speechSynthesis.onvoiceschanged = loadVoices; }
 
   // ===== simulation & user selection =====
   function simulate(n,tipo,lado,step=false){
@@ -508,14 +513,25 @@
     else weights[bucket]+= (1-weights[bucket])*0.05;
   }
 
-  // ===== motivational helper (toast) =====
+  // ===== motivational & egg =====
   function maybeMotivate(){
     const total = ok + err;
     if (total>0 && total % MOTIVATION_EVERY === 0){
       const msg = motivational[Math.floor(Math.random()*motivational.length)];
-      // usa toast para não ser apagado pelo newNumber()
       showToast(msg);
     }
+  }
+  function checkEasterEgg(){
+    const total = ok + err;
+    if(!eggShown && total >= EGG_AT){
+      eggShown = true;
+      localStorage.setItem('q_eggShown','1');
+      eggModal.style.display='grid';
+      // voice (if enabled or even if not? Keep silent unless user turned on TTS)
+      if(ttsCB.checked) speakText("Three hundred reps! You're good enough — go practice in the real world.");
+      return true;
+    }
+    return false;
   }
 
   // ===== core flow =====
@@ -549,15 +565,21 @@
     const sim=simulate(N, sel.tipo, sel.lado, stepCB.checked);
     const idealTxt=`${ideal.tipo==='basic'?'Basic':'Bounce'} + ${ideal.lado==='left'?'Left':'Right'}`;
     const userTxt =`${sel.tipo==='basic'?'Basic':'Bounce'} + ${sel.lado==='left'?'Left':'Right'}`;
+
     if(sim.hit){
       ok++; feedback.innerHTML=`<span class="ok">Correct!</span> <span class="muted">(${userTxt}) — ${elapsed.toFixed(1)}s</span>`;
-      setTimeout(newNumber,500);
     }else{
       err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You chose ${userTxt}. Ideal: <b>${idealTxt}</b>. — ${elapsed.toFixed(1)}s</span>`;
+      if(stepCB.checked && sim.log.length){
+        const path=sim.log.map(s=>s.pos+1).join(' → ');
+        feedback.innerHTML+=`<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
+      }
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
     maybeMotivate();
+    const egg = checkEasterEgg();
+    if(!egg && sim.hit){ setTimeout(newNumber,500); }
   }
 
   function fastTap(idx){
@@ -566,31 +588,35 @@
     const ideal=correctRule(N);
     const startIdx=(ideal.lado==='left')?0:4;
     const isRight=(idx===startIdx);
+
     if(isRight){
       ok++; feedback.innerHTML=`<span class="ok">Correct!</span> <span class="muted">(Start: <b>${ideal.lado==='left'?'Left':'Right'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>) — ${elapsed.toFixed(1)}s</span>`;
-      setTimeout(newNumber,350);
     }else{
       err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You tapped ${idx+1}º. Ideal start is <b>${ideal.lado==='left'?'Left (1º)':'Right (5º)'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>. — ${elapsed.toFixed(1)}s</span>`;
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
     maybeMotivate();
+    const egg = checkEasterEgg();
+    if(!egg && isRight){ setTimeout(newNumber,350); }
   }
-  window.fastTap=fastTap; // fallback inline
+  window.fastTap=fastTap;
 
   // ===== events =====
   nextBtn.addEventListener('click', newNumber);
   checkBtn.addEventListener('click', ()=>{ if(!fastCB.checked) verify(); });
   helpBtn.addEventListener('click', ()=> modal.style.display='grid');
-  $('#closeHelp')?.addEventListener('click', ()=> modal.style.display='none');
+  closeHelp.addEventListener('click', ()=> modal.style.display='none');
   qsBtn.addEventListener('click', ()=> qsModal.style.display='grid');
-  $('#closeQS')?.addEventListener('click', ()=> qsModal.style.display='none');
+  closeQS.addEventListener('click', ()=> qsModal.style.display='none');
 
   rangeSel.addEventListener('change', ()=> customWrap.style.display=(rangeSel.value==='custom'?'inline-flex':'none'));
   resetBtn.addEventListener('click', ()=>{
     ok=err=0; okEl.textContent=0; errEl.textContent=0;
     lastN=null; feedback.textContent=''; manualOut.textContent='—'; manualN.value='';
-    weights=[1,1,1,1]; newNumber();
+    weights=[1,1,1,1];
+    eggShown=false; localStorage.removeItem('q_eggShown');
+    newNumber();
   });
 
   // keyboard shortcuts
@@ -629,7 +655,7 @@
   analyzeBtn.addEventListener('click', analyzeManual);
   manualN.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
 
-  // Fast Tap handlers (click + touch) + inline fallback
+  // Fast Tap handlers (click + touch)
   function getIdxFromEvent(ev){
     const t=ev.target.closest('.item');
     if(!t || !board.contains(t)) return null;
@@ -662,19 +688,14 @@
   }
   fastCB.addEventListener('change', syncFastModeUI);
 
-  // ===== Adaptive settings modal + UI sync =====
+  // Adaptive UI
   function openAdaptModal(){
     fastThIn.value = fastThreshold.toFixed(1);
     slowThIn.value = slowThreshold.toFixed(1);
     adaptModal.style.display='grid';
   }
   function closeAdaptModal(){ adaptModal.style.display='none'; }
-
-  function syncAdaptiveUI(){
-    const on = adaptiveCB.checked;
-    adaptCfgBtn.disabled = !on;
-  }
-
+  function syncAdaptiveUI(){ adaptCfgBtn.disabled = !adaptiveCB.checked; }
   adaptiveCB.addEventListener('change', syncAdaptiveUI);
   adaptCfgBtn.addEventListener('click', ()=>{ if(!adaptCfgBtn.disabled) openAdaptModal(); });
   closeAdapt.addEventListener('click', closeAdaptModal);
@@ -687,6 +708,18 @@
     localStorage.setItem('q_slowTh', String(slowThreshold));
     updateTimeLegend();
     closeAdaptModal();
+  });
+
+  // Easter egg buttons
+  eggContinue.addEventListener('click', ()=>{
+    eggModal.style.display='none';
+    // continue where you left off (doesn't auto-generate to emphasize the pause)
+  });
+  eggReset.addEventListener('click', ()=>{
+    ok=err=0; okEl.textContent=0; errEl.textContent=0;
+    eggShown=false; localStorage.removeItem('q_eggShown');
+    eggModal.style.display='none';
+    newNumber();
   });
 
   // start
