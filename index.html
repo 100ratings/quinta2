@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Training QUINTA — v1.4.7</title>
+<title>Training QUINTA — v1.4.6</title>
 
 <!-- iOS fullscreen / PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,27 +56,12 @@
   /* iOS: remove highlight e foco persistente em botões/links */
   button, a { -webkit-tap-highlight-color: transparent; }
   button:focus, button:focus-visible { outline: none; }
-
-  /* Mail pill igual ao “quadrado” */
-  #mailLink{
-    color: var(--fg);
-    background:#131827;
-    border:1px solid #2a3242;
-    border-radius:10px;
-    padding:6px 10px;
-    text-decoration:none;
-    transition:border-color .15s, box-shadow .15s;
-  }
-  #mailLink:hover{
-    border-color:#3a4760;
-    box-shadow:0 0 0 2px var(--accent) inset;
-  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Training <span class="muted">QUINTA — v1.4.7</span></h1>
+    <h1>Training <span class="muted">QUINTA — v1.4.6</span></h1>
 
     <div class="row" style="margin:6px 0 10px">
       <button id="nextBtn" title="Shortcut: N">Generate number <span class="kbd">N</span></button>
@@ -171,7 +156,7 @@
 
   <div class="legend" style="margin-top:12px; text-align:center; font-size:13px">
     💡 Feedback? Bugs or suggestions →
-    <a id="mailLink" href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
+    <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
   </div>
 </div>
 
@@ -364,7 +349,7 @@
   const qsBtn=$('#qsBtn'),qsModal=$('#qsModal'),closeQS=$('#closeQS');
   const tBasic=$('#tBasic'),tBounce=$('#tBounce'),sLeft=$('#sLeft'),sRight=$('#sRight');
   const stepCB=$('#step');
-  const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN']);
+  const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN');
   const adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB'),errTtsCB=$('#errTtsCB');
   const voiceSel=$('#voiceSel');
   const manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
@@ -495,6 +480,7 @@
       en:'wrong', pt:'errou', 'pt-pt':'erraste', es:'fallaste', fr:'raté', de:'falsch', it:'sbagliato',
       ja:'不正解です', zh:'答错了', ko:'틀렸습니다'
     };
+    // prefer exact lang, then base
     if(map[L]) return map[L];
     if(map[base]) return map[base];
     return 'wrong';
@@ -511,26 +497,6 @@
     if(!errTtsCB.checked) return;
     const lang=getActiveLang();
     speakText(errorWordFor(lang));
-  }
-
-  // i18n para o marco de 100/200/... (texto e fala) baseado no idioma ativo
-  function milestoneStrings(lang, milestone){
-    const L=(lang||'en').toLowerCase();
-    const base=L.split('-')[0];
-    const T={
-      en:  {title:`${milestone} reps!`,  msg:`You’re good enough — go practice in the real world.`},
-      pt:  {title:`${milestone} repetições!`, msg:`Você já é bom o suficiente — vá praticar no mundo real.`},
-      'pt-pt': {title:`${milestone} repetições!`, msg:`És bom o suficiente — vai praticar no mundo real.`},
-      es:  {title:`¡${milestone} repeticiones!`, msg:`Ya eres lo bastante bueno — ve a practicar en el mundo real.`},
-      fr:  {title:`${milestone} répétitions !`, msg:`Tu es assez bon — va pratiquer dans le monde réel.`},
-      de:  {title:`${milestone} Wiederholungen!`, msg:`Du bist gut genug — übe jetzt in der echten Welt.`},
-      it:  {title:`${milestone} ripetizioni!`, msg:`Sei già abbastanza bravo — vai a esercitarti nel mondo reale.`},
-      ja:  {title:`${milestone} 回！`, msg:`もう十分上手です——実際の場で練習しましょう。`},
-      zh:  {title:`${milestone} 次！`, msg:`你已经足够棒了——去现实中练习吧。`},
-      ko:  {title:`${milestone}회!`, msg:`이제 충분히 잘해요 — 실제 환경에서 연습해 보세요.`},
-    };
-    const pick = T[L] || T[base] || T.en;
-    return { title: pick.title, message: pick.msg, spoken: `${pick.title} ${pick.msg}` };
   }
 
   loadVoices();
@@ -568,15 +534,10 @@
     if (milestone > 0 && total % EGG_EVERY === 0 && milestone !== lastEggMilestone){
       lastEggMilestone = milestone;
       localStorage.setItem('q_lastEggMilestone', String(lastEggMilestone));
-
-      const lang = getActiveLang();
-      const ms = milestoneStrings(lang, milestone);
-
-      if (eggTitle) eggTitle.textContent = ms.title;
-      if (eggMsg)   eggMsg.textContent   = ms.message;
-
+      if (eggTitle) eggTitle.textContent = `${milestone} reps!`;
+      if (eggMsg) eggMsg.textContent = `You’re good enough — go practice in the real world.`;
       eggModal.style.display='grid';
-      if(ttsCB.checked) speakText(ms.spoken);
+      if(ttsCB.checked) speakText(`${milestone} reps! You're good enough — go practice in the real world.`);
       return true;
     }
     return false;
