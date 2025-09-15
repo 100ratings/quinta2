@@ -21,7 +21,7 @@
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .big{font-size:28px;font-weight:700}
   .muted{color:var(--muted)}
-  .pill{padding:6px 10px;border-radius:999px;border:1px solid #2a3242;background:#131827;font-size:12px}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid #2a3242;background:#131827;font-size:12px;display:inline-flex;align-items:center;gap:6px}
   button{background:#1d2433;color:var(--fg);border:1px solid #2a3242;border-radius:10px;padding:11px 14px;font-size:15px;cursor:pointer}
   button:hover{border-color:#3a4760}
   .kbd{font-family:ui-monospace,Consolas,Menlo,monospace;background:#111521;border:1px solid #273047;border-radius:6px;padding:2px 6px;font-size:12px}
@@ -52,6 +52,10 @@
   .hide{display:none!important}
   footer{margin-top:12px;text-align:center;font-size:12px;color:#9aa3b2}
   select, input[type="number"]{background:#0d1017;border:1px solid #2a3242;color:#e6e6e6;border-radius:8px;padding:6px}
+
+  /* iOS: remove highlight e foco persistente em botões/links */
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button:focus, button:focus-visible { outline: none; }
 </style>
 </head>
 <body>
@@ -93,10 +97,11 @@
       <span class="pill"><label><input id="fastCB" type="checkbox" checked> Fast Tap Mode</label></span>
 
       <span class="pill">
-        <label style="margin-right:6px"><input id="ttsCB" type="checkbox"> Speak number</label>
+        <label style="margin-right:6px"><input id="ttsCB" type="checkbox" checked> Speak number</label>
         <select id="voiceSel" title="Select voice" style="max-width:260px">
           <option value="">Auto (by language)</option>
         </select>
+        <label style="margin-left:6px"><input id="errTtsCB" type="checkbox" checked> Speak errors</label>
       </span>
 
       <button id="resetBtn" title="Reset learning">Reset training</button>
@@ -178,6 +183,7 @@
         <div class="legend">
           • <b>Fast Tap Mode</b>: just tap the square where you’d say “1” — no need to set type/side or press Check.<br>
           • <b>Speak number</b> (TTS) with <b>auto language</b> and a <b>manual voice selector</b>.<br>
+          • <b>Speak errors</b>: optional short audio cue (“wrong/errou”) when you miss.<br>
           • <b>Adaptive</b>: increases the frequency of cases you’re slower at.<br>
           • <b>Scrollable modals</b> on mobile (Help & Quick Start).<br>
           • “Avg(20)” removed from the UI; per-round time kept simple.
@@ -225,34 +231,54 @@
       <div>
         <h3 style="margin:0 0 6px">What this trainer is</h3>
         <div class="legend">
-          Practice the mechanics to force the <b>2nd from the left</b> among five by choosing the correct
-          <b>Counting Type</b> and <b>Starting Side</b> for any <i>N</i>.
+          Train the mechanics of forcing the <b>2nd from the left</b> among five items by choosing the correct
+          <b>Counting Type</b> and <b>Starting Side</b> for any integer <i>N</i>.
         </div>
 
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">2-minute flow</h3>
         <ol class="legend" style="padding-left:18px">
-          <li>Choose a <b>Range</b> (or set <b>Custom</b>). Keep <b>Adaptive</b> on.</li>
+          <li>Pick a <b>Range</b> (or set <b>Custom</b>). Keep <b>Adaptive</b> on.</li>
           <li>Press <b>Generate number</b> (<span class="kbd">N</span>).</li>
-          <li><b>Fast Tap Mode</b>: tap where you’d say “1”. (Or turn it off to use Type/Side + Check.)</li>
-          <li>(Optional) Enable <b>Speak number</b> and select a voice from the dropdown.</li>
-          <li>On correct, a new number is generated automatically.</li>
+          <li><b>Fast Tap Mode</b>: simply tap the square where you’d say “1”. (No need to pick Type/Side or hit Check.)</li>
+          <li>(Optional) To practice sight-free, enable <b>Speak number</b> and select a voice (Auto picks your device language).</li>
+          <li>(Optional) Turn on <b>Speak errors</b> to get a short “wrong/errou” cue whenever you miss.</li>
+          <li>On a correct answer the next number auto-generates; focus on rhythm and consistency.</li>
         </ol>
 
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Manual mode</h3>
         <div class="legend">
           Type any <b>N</b> and click <b>Find side &amp; type</b> (or <span class="kbd">Ctrl+Enter</span>) to see the ideal answer.
+          Use this to double-check tricky cases or to rehearse specific numbers.
         </div>
       </div>
 
       <div>
+        <h3 style="margin:0 0 6px">Rules (cheat-sheet)</h3>
+        <div class="legend">
+          <b>Type:</b> even N → <b>Basic</b>; odd N → <b>Bounce</b>.<br/>
+          <b>Side (Basic):</b> start on <b>Left</b> if <code>N ≡ 0 or 2 (mod 8)</code>, otherwise <b>Right</b>.<br/>
+          <b>Side (Bounce):</b> apply the same rule to <b>N + 1</b> (and count <i>moves</i> instead of points).<br/>
+          <b>Fast Tap:</b> just tap where you would say “1”.
+        </div>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Adaptive & timing</h3>
+        <div class="legend">
+          <b>Adaptive</b> increases the frequency of buckets you’re slower at and reduces the easy ones.<br/>
+          Timing legend updates your thresholds; tune them in <b>Adaptive settings</b> to match your goals.
+        </div>
+
+        <div class="hr"></div>
         <h3 style="margin:0 0 6px">Shortcuts & tips</h3>
         <div class="legend">
-          <b>Shortcuts:</b> <span class="kbd">N</span>, <span class="kbd">Enter</span>, <span class="kbd">Ctrl+Enter</span>, <span class="kbd">H</span>, <span class="kbd">Q</span>.<br/>
-          <b>Arrows/WASD:</b> type and side (when not in Fast Tap).<br/>
-          <b>TTS:</b> “Auto (by language)” uses your browser/system language; you can override it via the selector.<br/>
-          <b>Reset:</b> clears stats and adaptive weights.
+          <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check •
+          <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N.<br/>
+          <b>W/A/S/D</b> or <b>Arrows</b>: set Type (Basic/Bounce) and Side (Left/Right) when not in Fast Tap.<br/>
+          <b>TTS:</b> Auto picks your device/browser language; you can override via the dropdown.<br/>
+          <b>Reset</b> clears stats and adaptive weights.<br/>
+          Easter egg shows every 100 reps — a friendly nudge to go practice in the real world.
         </div>
       </div>
     </div>
@@ -290,7 +316,9 @@
     </div>
     <div class="hr"></div>
     <div class="row" style="justify-content:flex-end;gap:8px">
+      <button id="closeAdapt2" title="Close (alt)" class="hide">Close</button>
       <button id="saveAdapt" title="Save">Save</button>
+      <button id="closeAdaptX" title="Close">Close</button>
     </div>
   </div>
 </div>
@@ -322,7 +350,7 @@
   const tBasic=$('#tBasic'),tBounce=$('#tBounce'),sLeft=$('#sLeft'),sRight=$('#sRight');
   const stepCB=$('#step');
   const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN');
-  const adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB');
+  const adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB'),errTtsCB=$('#errTtsCB');
   const voiceSel=$('#voiceSel');
   const manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
   const board=$('#board'),advancedControls=$('#advancedControls'),hintEl=$('#hint');
@@ -330,6 +358,8 @@
   const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt');
   const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   const timeLegend=$('#timeLegend');
+
+  const closeAdapt2=$('#closeAdapt2'), closeAdaptX=$('#closeAdaptX');
 
   const eggModal=$('#eggModal'), eggTitle=$('#eggTitle'), eggMsg=$('#eggMsg'), eggContinue=$('#eggContinue'), eggReset=$('#eggReset');
 
@@ -441,6 +471,34 @@
     }catch(e){}
   }
   function speakNumber(n){ if(ttsCB.checked) speakText(n); }
+
+  // localized short "wrong" message based on selected/auto voice language
+  function errorWordFor(lang){
+    const L=(lang||'en').toLowerCase();
+    const base=L.split('-')[0];
+    const map={
+      en:'wrong', pt:'errou', 'pt-pt':'erraste', es:'fallaste', fr:'raté', de:'falsch', it:'sbagliato',
+      ja:'不正解です', zh:'答错了', ko:'틀렸습니다'
+    };
+    // prefer exact lang, then base
+    if(map[L]) return map[L];
+    if(map[base]) return map[base];
+    return 'wrong';
+  }
+  function getActiveLang(){
+    const selName = voiceSel.value;
+    if(selName){
+      const v=_voices.find(v=>v.name===selName);
+      if(v && v.lang) return v.lang;
+    }
+    return getTargetLang();
+  }
+  function speakError(){
+    if(!errTtsCB.checked) return;
+    const lang=getActiveLang();
+    speakText(errorWordFor(lang));
+  }
+
   loadVoices();
   if('onvoiceschanged' in speechSynthesis){ speechSynthesis.onvoiceschanged = loadVoices; }
 
@@ -473,7 +531,6 @@
   function checkEasterEgg(){
     const total = ok + err;
     const milestone = Math.floor(total / EGG_EVERY) * EGG_EVERY;
-    // Trigger only at exact multiples (100, 200, ...) and only once per milestone
     if (milestone > 0 && total % EGG_EVERY === 0 && milestone !== lastEggMilestone){
       lastEggMilestone = milestone;
       localStorage.setItem('q_lastEggMilestone', String(lastEggMilestone));
@@ -526,6 +583,7 @@
         const path=sim.log.map(s=>s.pos+1).join(' → ');
         feedback.innerHTML+=`<div class="muted" style="margin-top:6px">Path: ${path}</div>`;
       }
+      speakError();
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
@@ -545,6 +603,7 @@
       ok++; feedback.innerHTML=`<span class="ok">Correct!</span> <span class="muted">(Start: <b>${ideal.lado==='left'?'Left':'Right'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>) — ${elapsed.toFixed(1)}s</span>`;
     }else{
       err++; feedback.innerHTML=`<span class="err">Wrong.</span> <span class="muted">You tapped ${idx+1}º. Ideal start is <b>${ideal.lado==='left'?'Left (1º)':'Right (5º)'}</b>; Type: <b>${ideal.tipo==='basic'?'Basic':'Bounce'}</b>. — ${elapsed.toFixed(1)}s</span>`;
+      speakError();
     }
     okEl.textContent=ok; errEl.textContent=err;
     updateAdaptiveWeights(bucketFromRule(ideal), elapsed);
@@ -651,7 +710,9 @@
   function syncAdaptiveUI(){ adaptCfgBtn.disabled = !adaptiveCB.checked; }
   adaptiveCB.addEventListener('change', syncAdaptiveUI);
   adaptCfgBtn.addEventListener('click', ()=>{ if(!adaptCfgBtn.disabled) openAdaptModal(); });
-  closeAdapt.addEventListener('click', closeAdaptModal);
+  [closeAdapt, closeAdapt2, closeAdaptX].forEach(btn=>{
+    if(btn) btn.addEventListener('click', closeAdaptModal);
+  });
   saveAdapt.addEventListener('click', ()=>{
     const f = Number(fastThIn.value), s = Number(slowThIn.value);
     if(!isFinite(f)||!isFinite(s)||f<=0||s<=0){ alert('Use positive numeric values.'); return; }
@@ -666,7 +727,6 @@
   // Easter egg buttons
   eggContinue.addEventListener('click', ()=>{
     eggModal.style.display='none';
-    // pause preserved; user pode apertar N para continuar
   });
   eggReset.addEventListener('click', ()=>{
     ok=err=0; okEl.textContent=0; errEl.textContent=0;
@@ -675,6 +735,16 @@
     eggModal.style.display='none';
     newNumber();
   });
+
+  // Remove foco visual persistente após clique/toque (iOS/Safari)
+  function unfocusOnInteract(el){
+    if(!el) return;
+    el.addEventListener('mouseup',  e => e.currentTarget.blur(), {passive:true});
+    el.addEventListener('touchend', e => e.currentTarget.blur(), {passive:true});
+    el.addEventListener('keyup',    e => { if(e.key === 'Enter' || e.key === ' ') e.currentTarget.blur(); });
+  }
+  [nextBtn, checkBtn, helpBtn, qsBtn, resetBtn, adaptCfgBtn, analyzeBtn, closeHelp, closeQS, closeAdapt, saveAdapt, eggContinue, eggReset, closeAdapt2, closeAdaptX]
+    .forEach(unfocusOnInteract);
 
   // start
   syncFastModeUI();
@@ -686,4 +756,3 @@
 </script>
 </body>
 </html>
-
