@@ -1,3 +1,4 @@
+<!-- Source: :contentReference[oaicite:0]{index=0} -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,6 +57,10 @@
   /* iOS: remove highlight e foco persistente em botões/links */
   button, a { -webkit-tap-highlight-color: transparent; }
   button:focus, button:focus-visible { outline: none; }
+
+  /* (1) Email link in the same accent color as the 2nd (force) outline */
+  a[href^="mailto:"]{ color: var(--accent); text-decoration-color: var(--accent); }
+  a[href^="mailto:"]:hover{ filter: brightness(1.12); }
 </style>
 </head>
 <body>
@@ -83,7 +88,7 @@
         </select>
       </span>
       <span id="customWrap" class="pill" style="display:none">
-        <input id="minN" type="number" value="1" style="width:80px"> –
+        <input id="minN" type="number" value="1" style="width:80px"> – 
         <input id="maxN" type="number" value="15" style="width:80px">
       </span>
 
@@ -155,7 +160,7 @@
   </div>
 
   <div class="legend" style="margin-top:12px; text-align:center; font-size:13px">
-    💡 Feedback? Bugs or suggestions →
+    💡 Feedback? Bugs or suggestions → 
     <a href="mailto:magicodemian@hotmail.com">magicodemian@hotmail.com</a>
   </div>
 </div>
@@ -273,7 +278,7 @@
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">Shortcuts & tips</h3>
         <div class="legend">
-          <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check •
+          <b>Shortcuts:</b> <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • 
           <span class="kbd">H</span> Help • <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N.<br/>
           <b>W/A/S/D</b> or <b>Arrows</b>: set Type (Basic/Bounce) and Side (Left/Right) when not in Fast Tap.<br/>
           <b>TTS:</b> Auto picks your device/browser language; you can override via the dropdown.<br/>
@@ -349,13 +354,13 @@
   const qsBtn=$('#qsBtn'),qsModal=$('#qsModal'),closeQS=$('#closeQS');
   const tBasic=$('#tBasic'),tBounce=$('#tBounce'),sLeft=$('#sLeft'),sRight=$('#sRight');
   const stepCB=$('#step');
-  const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN');
+  const rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN']);
   const adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB'),errTtsCB=$('#errTtsCB');
   const voiceSel=$('#voiceSel');
   const manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
   const board=$('#board'),advancedControls=$('#advancedControls'),hintEl=$('#hint');
   const adaptCfgBtn=$('#adaptCfgBtn');
-  const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt');
+  const adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt']);
   const fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   const timeLegend=$('#timeLegend');
 
@@ -480,7 +485,6 @@
       en:'wrong', pt:'errou', 'pt-pt':'erraste', es:'fallaste', fr:'raté', de:'falsch', it:'sbagliato',
       ja:'不正解です', zh:'答错了', ko:'틀렸습니다'
     };
-    // prefer exact lang, then base
     if(map[L]) return map[L];
     if(map[base]) return map[base];
     return 'wrong';
@@ -497,6 +501,25 @@
     if(!errTtsCB.checked) return;
     const lang=getActiveLang();
     speakText(errorWordFor(lang));
+  }
+
+  // ===== Milestone (every 100) — localized title + message like "errou" =====
+  function milestoneStringsFor(lang, milestone){
+    const L=(lang||'en').toLowerCase();
+    const base=L.split('-')[0];
+    const map={
+      en:{title: n=>`${n} reps!`, msg:`You're good enough — go practice in the real world.`},
+      pt:{title: n=>`${n} repetições!`, msg:`Você já é bom o suficiente — vá praticar no mundo real.`},
+      es:{title: n=>`¡${n} repeticiones!`, msg:`Ya eres lo bastante bueno — sal a practicar en el mundo real.`},
+      fr:{title: n=>`${n} répétitions !`, msg:`Tu es déjà assez bon — va t'exercer dans le monde réel.`},
+      de:{title: n=>`${n} Wiederholungen!`, msg:`Du bist gut genug – übe jetzt in der echten Welt.`},
+      it:{title: n=>`${n} ripetizioni!`, msg:`Sei già abbastanza bravo — vai ad allenarti nel mondo reale.`},
+      ja:{title: n=>`${n} 回！`, msg:`もう十分上手です。現実の世界で練習しましょう。`},
+      zh:{title: n=>`${n} 次！`, msg:`你已经足够棒了——去现实中练习吧。`},
+      ko:{title: n=>`${n}회!`, msg:`이제 충분히 잘해요 — 실제 환경에서 연습해 보세요.`}
+    };
+    const dict = map[L] || map[base] || map.en;
+    return { title: dict.title(milestone), msg: dict.msg };
   }
 
   loadVoices();
@@ -534,10 +557,15 @@
     if (milestone > 0 && total % EGG_EVERY === 0 && milestone !== lastEggMilestone){
       lastEggMilestone = milestone;
       localStorage.setItem('q_lastEggMilestone', String(lastEggMilestone));
-      if (eggTitle) eggTitle.textContent = `${milestone} reps!`;
-      if (eggMsg) eggMsg.textContent = `You’re good enough — go practice in the real world.`;
+
+      // Localized title + body + TTS (same language logic as errors)
+      const lang = getActiveLang();
+      const { title, msg } = milestoneStringsFor(lang, milestone);
+      if (eggTitle) eggTitle.textContent = title;
+      if (eggMsg)   eggMsg.textContent   = msg;
+
       eggModal.style.display='grid';
-      if(ttsCB.checked) speakText(`${milestone} reps! You're good enough — go practice in the real world.`);
+      if(ttsCB.checked) speakText(`${title} ${msg}`);
       return true;
     }
     return false;
