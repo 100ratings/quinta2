@@ -118,7 +118,7 @@
 
     <div class="big" id="number">—</div>
     <div class="legend" id="hint">
-      Fast Tap Mode: <b>tap where you’d say "1"</b>. (Force is the <b>2nd from the left</b>.)
+      Fast Tap Mode: <b>tap the side you would start on (1 or 5)</b>. (Force is the <b>2nd from the left</b>.)
     </div>
 
     <div class="board" aria-label="row of 5 items" id="board">
@@ -182,7 +182,7 @@
         <div class="hr"></div>
         <h3 style="margin:0 0 6px">What’s new in v1.4.x</h3>
         <div class="legend">
-          • <b>Fast Tap Mode</b>: just tap where you’d say "1" — no Type/Side or Check needed.<br>
+          • <b>Fast Tap Mode</b>: just tap the side you would start on (1 or 5) — no Type/Side or Check needed.<br>
           • <b>Speak number</b> (TTS) with Auto (by language) + manual voice selector.<br>
           • <b>Speak errors</b>: short "wrong" cue in your selected language when you miss.<br>
           • <b>Adaptive</b>: surfaces buckets where you’re currently slower.<br>
@@ -196,7 +196,7 @@
           <b>Type:</b> even N → <b>Basic</b>; odd N → <b>Bounce</b>.<br/>
           <b>Side (Basic):</b> <b>Left</b> if N ≡ 0 or 2 (mod 8); otherwise <b>Right</b>.<br/>
           <b>Side (Bounce):</b> apply the same rule to <b>N + 1</b>.<br/>
-          <b>Fast Tap:</b> tap where you’d say "1".<br/>
+          <b>Fast Tap:</b> tap the side you would start on (1 or 5).<br/>
           <b>TTS:</b> enable "Speak number" and (optionally) choose a voice.
         </div>
       </div>
@@ -242,7 +242,7 @@
           <b>Type:</b> even N → <b>Basic</b>; odd N → <b>Bounce</b>.<br/>
           <b>Side (Basic):</b> Start <b>Left</b> if N ≡ 0 or 2 (mod 8); otherwise start <b>Right</b>.<br/>
           <b>Side (Bounce):</b> Add 1 to N, then apply the same rule as Basic.<br/>
-          <b>Fast Tap:</b> Tap where you’d say “1” — the app handles Type/Side logic for you.<br/>
+          <b>Fast Tap:</b> tap the side you would start on (1 or 5) — the app handles Type/Side logic for you.<br/>
           <b>TTS & Errors:</b> “Speak number” reads the target; “Speak errors” confirms mistakes aloud.
         </div>
       </div>
@@ -604,7 +604,7 @@
     startTime=now(); feedback.textContent=''; locked=false;
 
     hintEl.innerHTML = fastCB.checked
-      ? 'Fast Tap Mode: <b>tap where you’d say "1"</b>. (Force is the <b>2nd from the left</b>.)'
+      ? 'Fast Tap Mode: <b>tap the side you would start on (1 or 5)</b>. (Force is the <b>2nd from the left</b>.)'
       : 'Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.';
 
     speakNumber(N);
@@ -748,7 +748,7 @@
     advancedControls.classList.toggle('hide', on);
     checkBtn.classList.toggle('hide', on);
     hintEl.innerHTML = on
-      ? 'Fast Tap Mode: <b>tap where you’d say "1"</b>. (Force is the <b>2nd from the left</b>.)'
+      ? 'Fast Tap Mode: <b>tap the side you would start on (1 or 5)</b>. (Force is the <b>2nd from the left</b>.)'
       : 'Generate a number and choose the counting type and the side. The force item is always the <b>2nd from the left</b>.';
   }
   fastCB.addEventListener('change', syncFastModeUI);
