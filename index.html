@@ -14,7 +14,7 @@
 <style>
   :root{
     --bg:#0f1115;--fg:#e6e6e6;--muted:#9aa3b2;--ok:#19c37d;--err:#ff5c5c;
-    --card:#151923;--accent:#7a6bff; /* roxinho do 2nd (force) */
+    --card:#151923;--accent:#7a6bff; /* purple used by 2nd (force) */
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
@@ -58,7 +58,7 @@
   button, a { -webkit-tap-highlight-color: transparent; }
   button:focus, button:focus-visible { outline: none; }
 
-  /* (1) Email com a mesma cor do 2nd (force) */
+  /* (1) Email color matches the 2nd (force) outline */
   a[href^="mailto:"]{ color: var(--accent); text-decoration-color: var(--accent); }
   a[href^="mailto:"]:hover{ filter: brightness(1.12); }
 </style>
@@ -163,40 +163,98 @@
 <div class="modal" id="modal">
   <div class="inner">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <h2>Quick rules & reminders</h2>
+      <h2>Help — How the trainer works</h2>
       <button id="closeHelp">Close</button>
     </div>
     <div class="hr"></div>
-    <div class="grid2">
-      <div>
-        <h3 style="margin:0 0 6px">Core of the method</h3>
-        <div class="legend">
-          • Force 1 item among 5; the force item is always the <b>2nd from the left</b> (fixed).<br>
-          • <b>Type:</b> even <i>N</i> → <b>Basic</b>; odd <i>N</i> → <b>Bounce</b>.<br>
-          • <b>Side (Basic):</b> start on the <b>left</b> if <code>N ≡ 0 or 2 (mod 8)</code>, otherwise on the <b>right</b>.<br>
-          • <b>Side (Bounce):</b> apply the same rule to <b>N+1</b> (and count <i>moves</i>).
-        </div>
-        <div class="hr"></div>
-        <h3 style="margin:0 0 6px">New features in v1.4.x</h3>
-        <div class="legend">
-          • <b>Fast Tap Mode</b>: just tap the square where you’d say "1".<br>
-          • <b>Speak number</b> (TTS) with auto language + manual selector.<br>
-          • <b>Speak errors</b>: breve "wrong/errou" quando errar.<br>
-          • <b>Adaptive</b>: prioriza o que você está mais lento.<br>
-          • Modals com scroll no mobile.
-        </div>
-      </div>
 
-      <div>
-        <h3 style="margin:0 0 6px">Cheat-sheet</h3>
-        <div class="legend">
-          <b>Type:</b> even N → Basic; odd N → Bounce. <br/>
-          <b>Side (Basic):</b> Left if N ≡ 0 or 2 (mod 8); otherwise Right. <br/>
-          <b>Side (Bounce):</b> apply the same rule to N+1. <br/>
-          <b>Fast Tap:</b> tap where you’d say "1". <br/>
-          <b>TTS:</b> marque "Speak number" e, se quiser, escolha a voz.
-        </div>
-      </div>
+    <h3 style="margin:0 0 6px">1) Goal</h3>
+    <div class="legend">
+      You’re practicing a 1-in-5 force where the <b>forced item is always the 2nd from the left</b>.
+      Given any integer <b>N</b>, you must pick the correct <b>Counting Type</b> (Basic or Bounce) and
+      the correct <b>Starting Side</b> (Left or Right) so the count <i>lands</i> on the 2nd position.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">2) Rules (exact)</h3>
+    <div class="legend">
+      • <b>Type:</b> even N → <b>Basic</b>; odd N → <b>Bounce</b>.<br>
+      • <b>Side (Basic):</b> start on <b>Left</b> if <code>N ≡ 0 or 2 (mod 8)</code>, otherwise start on <b>Right</b>.<br>
+      • <b>Side (Bounce):</b> apply the same rule to <b>N + 1</b> (and count <i>moves</i> rather than <i>points</i>).<br>
+      • <b>Force:</b> fixed at the <b>2nd from the left</b>.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">3) Modes</h3>
+    <div class="legend">
+      • <b>Normal mode:</b> Generate a number, choose Type (Basic/Bounce) and Side (Left/Right), then <b>Check</b>.<br>
+      • <b>Fast Tap Mode:</b> just <b>tap the square where you would say “1”</b>. No need to set Type/Side or press Check.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">4) Speak number & voices</h3>
+    <div class="legend">
+      • <b>Speak number</b> makes the device read N aloud. <b>Auto (by language)</b> follows your browser/device language.<br>
+      • Use the <b>voice selector</b> to override Auto. On iOS/macOS, voices appear after your first tap (system limitation).<br>
+      • <b>Speak errors:</b> if enabled, you’ll hear a short localized cue (e.g., “wrong”, “errou”) when you miss.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">5) Milestones (every 100)</h3>
+    <div class="legend">
+      Every <b>100</b> attempts the app shows an <b>easter-egg message</b> and <b>speaks it in the same language as your voice</b>.
+      This speech <b>always plays</b> for the milestone (even if “Speak number” is off).
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">6) Adaptive training</h3>
+    <div class="legend">
+      • With <b>Adaptive</b> ON, the trainer increases the frequency of buckets you’re slower at and reduces easy ones.<br>
+      • <b>Adaptive settings:</b> set your timing thresholds (<b>Fast ≤</b> and <b>Slow ≥</b>). These influence how weights change.<br>
+      • Defaults are Fast ≤ 3.0s and Slow ≥ 5.0s. You can tweak them to match your goals.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">7) Range & Custom</h3>
+    <div class="legend">
+      Choose a predefined <b>Range</b> or switch to <b>Custom</b> and set a min/max. The generator avoids repeating the last number.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">8) Manual analysis</h3>
+    <div class="legend">
+      Type any <b>N</b> and click <b>Find side & type</b> (or <span class="kbd">Ctrl+Enter</span>) to see the ideal answer.
+      Enable <b>Step-by-step</b> to view the simulated path when you Check.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">9) Timing & feedback</h3>
+    <div class="legend">
+      The live timer shows your response time. Below you’ll see <b>Correct</b>, <b>Wrong</b>, and the timing legend
+      (e.g., “Good ≤ 3.0s • Slow ≥ 5.0s”). Correct answers auto-advance after a short delay.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">10) Shortcuts</h3>
+    <div class="legend">
+      <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help •
+      <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N •
+      <span class="kbd">W/S</span> Basic/Bounce • <span class="kbd">A/D</span> Left/Right • <span class="kbd">Space</span> toggle Type.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">11) Persistence & privacy</h3>
+    <div class="legend">
+      Your thresholds and milestone progress are stored locally in <b>localStorage</b>. No data is sent anywhere.
+      <b>Reset training</b> clears counters and milestones.
+    </div>
+
+    <div class="hr"></div>
+    <h3 style="margin:0 0 6px">12) Tips & troubleshooting</h3>
+    <div class="legend">
+      • If voices don’t show on iOS/macOS Safari, tap once in the page, then reopen the voice list (system rule).<br>
+      • If TTS is muted, check device volume and that your browser tab isn’t silenced.<br>
+      • On mobile, Help/Quick Start scroll internally so the rest of the UI stays fixed.
     </div>
   </div>
 </div>
@@ -212,30 +270,58 @@
 
     <div class="grid2">
       <div>
-        <h3 style="margin:0 0 6px">What this trainer is</h3>
+        <h3 style="margin:0 0 6px">What is this?</h3>
         <div class="legend">
-          Train forcing the <b>2nd from the left</b> among five items by choosing the correct
-          <b>Counting Type</b> and <b>Starting Side</b> for any integer N.
+          A focused trainer for a 1-in-5 force where the <b>force is always the 2nd from the left</b>.
+          For any integer <b>N</b>, pick the correct <b>Counting Type</b> and <b>Starting Side</b> so you land on the force.
         </div>
 
         <div class="hr"></div>
-        <h3 style="margin:0 0 6px">2-minute flow</h3>
+        <h3 style="margin:0 0 6px">2-minute setup</h3>
         <ol class="legend" style="padding-left:18px">
-          <li>Pick a <b>Range</b> (or set <b>Custom</b>). Keep <b>Adaptive</b> on.</li>
-          <li>Press <b>Generate number</b> (N).</li>
-          <li><b>Fast Tap Mode</b>: simply tap the square where you’d say "1".</li>
-          <li>(Optional) Enable <b>Speak number</b> and select a voice (Auto = device language).</li>
-          <li>(Optional) Turn on <b>Speak errors</b> to get a short "wrong/errou" cue on misses.</li>
-          <li>On a correct answer the next number auto-generates.</li>
+          <li>Select a <b>Range</b> (or use <b>Custom</b>).</li>
+          <li>Keep <b>Adaptive</b> ON (recommended).</li>
+          <li>Press <b>Generate number</b> (<span class="kbd">N</span>).</li>
+          <li><b>Fast Tap Mode:</b> simply tap the square where you’d say “1”.</li>
+          <li>(Optional) Turn on <b>Speak number</b>. Auto picks your language; choose a voice if you want.</li>
+          <li>(Optional) Enable <b>Speak errors</b> for a short “wrong/errou” cue on misses.</li>
+          <li>Correct answers auto-advance. Stay smooth and consistent.</li>
         </ol>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Essential rules</h3>
+        <div class="legend">
+          <b>Type:</b> even N → Basic; odd N → Bounce.<br/>
+          <b>Side (Basic):</b> Left if <code>N ≡ 0 or 2 (mod 8)</code>, else Right.<br/>
+          <b>Side (Bounce):</b> apply the same rule to <b>N + 1</b>.
+        </div>
       </div>
 
       <div>
-        <h3 style="margin:0 0 6px">Rules (cheat-sheet)</h3>
+        <h3 style="margin:0 0 6px">Features you’ll use</h3>
         <div class="legend">
-          <b>Type:</b> even N → <b>Basic</b>; odd N → <b>Bounce</b>.<br/>
-          <b>Side (Basic):</b> <b>Left</b> if N ≡ 0 or 2 (mod 8), else <b>Right</b>.<br/>
-          <b>Side (Bounce):</b> apply the same rule to <b>N + 1</b> (and count moves).
+          • <b>Fast Tap Mode</b>: one-tap answers (no Check).<br>
+          • <b>Adaptive</b>: more reps where you’re slower.<br>
+          • <b>Adaptive settings</b>: set <b>Fast ≤</b> and <b>Slow ≥</b> thresholds (defaults 3.0s / 5.0s).<br>
+          • <b>Manual analysis</b>: type N and click <b>Find side &amp; type</b> (or <span class="kbd">Ctrl+Enter</span>).<br>
+          • <b>Step-by-step</b>: show the simulated path when checking.<br>
+          • <b>Milestones</b>: every 100 attempts you get a localized spoken message (always speaks).<br>
+          • <b>TTS voices</b>: Auto follows device language; override via the dropdown.<br>
+          • <b>Reset training</b>: clears counters and milestones (local only).
+        </div>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Shortcuts</h3>
+        <div class="legend">
+          <span class="kbd">N</span> Generate • <span class="kbd">Enter</span> Check • <span class="kbd">H</span> Help •
+          <span class="kbd">Q</span> Quick Start • <span class="kbd">Ctrl+Enter</span> Analyze N •
+          <span class="kbd">W/S</span> Basic/Bounce • <span class="kbd">A/D</span> Left/Right • <span class="kbd">Space</span> toggle Type.
+        </div>
+
+        <div class="hr"></div>
+        <h3 style="margin:0 0 6px">Tip</h3>
+        <div class="legend">
+          On iOS/macOS, voices populate after the first user interaction — tap once, then open the voice list.
         </div>
       </div>
     </div>
@@ -297,7 +383,6 @@
 (function(){
   'use strict';
 
-  // ===== helpers =====
   function $(s){ return document.querySelector(s); }
   var numberEl=$('#number'),feedback=$('#feedback');
   var okEl=$('#ok'),errEl=$('#err'),timerEl=$('#timer');
@@ -306,23 +391,21 @@
   var qsBtn=$('#qsBtn'),qsModal=$('#qsModal'),closeQS=$('#closeQS');
   var tBasic=$('#tBasic'),tBounce=$('#tBounce'),sLeft=$('#sLeft'),sRight=$('#sRight');
   var stepCB=$('#step');
-  var rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN');
+  var rangeSel=$('#range'),customWrap=$('#customWrap'),minN=$('#minN'),maxN=$('#maxN']);
   var adaptiveCB=$('#adaptiveCB'),fastCB=$('#fastCB'),ttsCB=$('#ttsCB'),errTtsCB=$('#errTtsCB');
   var voiceSel=$('#voiceSel');
   var manualN=$('#manualN'),analyzeBtn=$('#analyzeBtn'),manualOut=$('#manualOut');
   var board=$('#board'),advancedControls=$('#advancedControls'),hintEl=$('#hint');
   var adaptCfgBtn=$('#adaptCfgBtn');
-  var adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt'), closeAdapt2=$('#closeAdapt2');
+  var adaptModal=$('#adaptModal'), closeAdapt=$('#closeAdapt'), saveAdapt=$('#saveAdapt'), closeAdapt2=$('#closeAdapt2']);
   var fastThIn=$('#fastTh'), slowThIn=$('#slowTh');
   var timeLegend=$('#timeLegend');
 
   var eggModal=$('#eggModal'), eggTitle=$('#eggTitle'), eggMsg=$('#eggMsg'), eggContinue=$('#eggContinue'), eggReset=$('#eggReset');
 
-  // ===== state =====
   var N=null,lastN=null,startTime=0,ok=0,err=0,locked=false;
-  var weights=[1,1,1,1]; // BL, BR, bL, bR
+  var weights=[1,1,1,1];
 
-  // thresholds
   var fastThreshold = Number(localStorage.getItem('q_fastTh') || '3.0');
   var slowThreshold = Number(localStorage.getItem('q_slowTh') || '5.0');
 
@@ -332,7 +415,6 @@
     }
   }
 
-  // ===== timer =====
   function now(){ return performance.now(); }
   function updateTimer(){
     if(startTime && timerEl){ timerEl.textContent=((now()-startTime)/1000).toFixed(1)+'s'; }
@@ -340,7 +422,6 @@
   }
   requestAnimationFrame(updateTimer);
 
-  // ===== range =====
   function currentRange(){
     if(rangeSel.value==='custom'){
       var a=parseInt(minN.value||'1',10), b=parseInt(maxN.value||'15',10);
@@ -353,7 +434,6 @@
     return [parseInt(parts[0],10), parseInt(parts[1],10)];
   }
 
-  // ===== rules =====
   function correctRule(n){
     var tipo=(n%2===0)?'basic':'bounce';
     var m=(tipo==='bounce')?n+1:n;
@@ -368,7 +448,6 @@
     return 3;
   }
 
-  // ===== adaptive generator =====
   function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function sampleBucketAvailable(a,b){
     var seen={};
@@ -398,7 +477,6 @@
     return 0;
   }
 
-  // ===== TTS =====
   var voices=[];
   function getTargetLang(){ return navigator.language || document.documentElement.lang || 'en-US'; }
   function pickBestVoice(target){
@@ -501,7 +579,6 @@
     speakText(errorWordFor(lang), false);
   }
 
-  // ===== Milestone (cada 100) — fala no mesmo idioma, sempre =====
   function milestoneStringsFor(lang, milestone){
     var L=(lang||'en').toLowerCase();
     var base=L.split('-')[0];
@@ -521,7 +598,6 @@
     return { title: dict.title(milestone), msg: dict.msg };
   }
 
-  // ===== simulation =====
   function simulate(n,tipo,lado,step){
     var target=1, pos=(lado==='left')?0:4, dir=(lado==='left')?+1:-1;
     var log=[];
@@ -546,7 +622,6 @@
   }
   function userSelection(){ return {tipo:(tBasic.checked?'basic':'bounce'), lado:(sLeft.checked?'left':'right')}; }
 
-  // ===== adaptive weights =====
   function updateAdaptiveWeights(bucket, elapsed){
     if(!adaptiveCB.checked) return;
     var SLOW = slowThreshold, FAST = fastThreshold;
@@ -556,7 +631,6 @@
     else weights[bucket]+= (1-weights[bucket])*0.05;
   }
 
-  // ===== Easter egg (every 100) =====
   var EGG_EVERY = 100;
   var lastEggMilestone = Number(localStorage.getItem('q_lastEggMilestone') || '0');
 
@@ -571,14 +645,12 @@
       if (eggTitle) eggTitle.textContent = obj.title;
       if (eggMsg)   eggMsg.textContent   = obj.msg;
       if(eggModal) eggModal.style.display='grid';
-      // Falar sempre (force=true)
-      speakText(obj.title + ' ' + obj.msg, true);
+      speakText(obj.title + ' ' + obj.msg, true); // always speaks
       return true;
     }
     return false;
   }
 
-  // ===== core flow =====
   function newNumber(){
     var range=currentRange(), a=range[0], b=range[1];
     var targetBucket=pickBucket(a,b);
@@ -654,7 +726,6 @@
   }
   window.fastTap=fastTap;
 
-  // ===== UI events =====
   function show(el, on){ if(el) el.style.display = on ? '' : 'none'; }
 
   nextBtn.addEventListener('click', newNumber);
@@ -674,7 +745,6 @@
     newNumber();
   });
 
-  // keyboard shortcuts
   document.addEventListener('keydown', function(e){
     var kRaw=e.key||''; var k=kRaw.toLowerCase();
     if(k==='n'){ e.preventDefault(); newNumber(); return; }
@@ -694,7 +764,6 @@
     if(k===' '||k==='spacebar'){ e.preventDefault(); (tBasic.checked?tBounce:tBasic).checked=true; return; }
   });
 
-  // manual analysis
   function analyzeManual(){
     var raw=(manualN.value||'').trim();
     if(!raw){ manualOut.textContent='—'; return; }
@@ -710,7 +779,6 @@
   analyzeBtn.addEventListener('click', analyzeManual);
   manualN.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); analyzeManual(); } });
 
-  // Fast Tap handlers
   function getIdxFromEvent(ev){
     var t=ev.target.closest('.item');
     if(!t || !board.contains(t)) return null;
@@ -734,7 +802,6 @@
     })(i);
   }
 
-  // UI sync
   function syncFastModeUI(){
     var on=fastCB.checked;
     advancedControls.classList.toggle('hide', on);
@@ -745,7 +812,6 @@
   }
   fastCB.addEventListener('change', syncFastModeUI);
 
-  // Adaptive UI
   function openAdaptModal(){
     fastThIn.value = fastThreshold.toFixed(1);
     slowThIn.value = slowThreshold.toFixed(1);
@@ -768,7 +834,6 @@
     closeAdaptModal();
   });
 
-  // Easter egg buttons
   eggContinue.addEventListener('click', function(){ if(eggModal) eggModal.style.display='none'; });
   eggReset.addEventListener('click', function(){
     ok=0; err=0; okEl.textContent=0; errEl.textContent=0;
@@ -778,7 +843,6 @@
     newNumber();
   });
 
-  // init
   function init(){
     updateTimeLegend();
     syncFastModeUI();
@@ -787,8 +851,7 @@
   }
   init();
 
-})(); 
+})();
 </script>
 </body>
 </html>
-
